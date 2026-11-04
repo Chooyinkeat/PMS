@@ -1,0 +1,297 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- Page Header -->
+<div class="nk-block-head nk-block-head-sm">
+    <div class="nk-block-between">
+        <div class="nk-block-head-content">
+            <h3 class="nk-block-title page-title">Executive Dashboard</h3>
+            <div class="nk-block-des text-soft">
+                <p>Welcome back, <strong>@Model.CurrentUserName</strong>. Here is the operational summary of your projects and finances.</p>
+            </div>
+        </div>
+        <div class="nk-block-head-content">
+            <ul class="nk-block-tools g-3">
+                <li>
+                    <a asp-page="/Project/Cards" class="btn btn-outline-primary">
+                        <em class="icon ni ni-grid-alt"></em><span>Project Board</span>
+                    </a>
+                </li>
+                <li>
+                    <a asp-page="/Setup/DocMaintenance" class="btn btn-primary">
+                        <em class="icon ni ni-reports"></em><span>Document Center</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Primary Stats Row -->
+<div class="row g-gs mb-4">
+    <!-- Total Projects -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-bordered">
+            <div class="card-inner">
+                <div class="card-title-group align-start mb-2">
+                    <div class="card-title">
+                        <h6 class="title">Total Projects</h6>
+                    </div>
+                    <div class="card-tools">
+                        <em class="icon ni ni-briefcase text-primary fs-3"></em>
+                    </div>
+                </div>
+                <div class="data-group">
+                    <div class="amount fw-bold fs-3">@Model.Stats.TotalProjects</div>
+                </div>
+                <div class="data-hint text-soft small">
+                    <span class="text-info fw-bold">@Model.Stats.InProgressProjects active</span> &bull;
+                    <span class="text-success fw-bold">@Model.Stats.CompletedProjects done</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Customers -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-bordered">
+            <div class="card-inner">
+                <div class="card-title-group align-start mb-2">
+                    <div class="card-title">
+                        <h6 class="title">Active Clients</h6>
+                    </div>
+                    <div class="card-tools">
+                        <em class="icon ni ni-building text-azure fs-3"></em>
+                    </div>
+                </div>
+                <div class="data-group">
+                    <div class="amount fw-bold fs-3">@Model.Stats.TotalCustomers</div>
+                </div>
+                <div class="data-hint text-soft small">Corporate partnerships</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Contract Value -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-bordered">
+            <div class="card-inner">
+                <div class="card-title-group align-start mb-2">
+                    <div class="card-title">
+                        <h6 class="title">Contract Value</h6>
+                    </div>
+                    <div class="card-tools">
+                        <em class="icon ni ni-money text-info fs-3"></em>
+                    </div>
+                </div>
+                <div class="data-group">
+                    <div class="amount fw-bold fs-3">@Model.Stats.TotalContractSum.ToString("C0")</div>
+                </div>
+                <div class="data-hint text-soft small">Total portfolio pipeline</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payments Collected -->
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-bordered">
+            <div class="card-inner">
+                <div class="card-title-group align-start mb-2">
+                    <div class="card-title">
+                        <h6 class="title">Cash Collected</h6>
+                    </div>
+                    <div class="card-tools">
+                        <em class="icon ni ni-wallet text-success fs-3"></em>
+                    </div>
+                </div>
+                <div class="data-group">
+                    <div class="amount fw-bold fs-3 text-success">@Model.Stats.TotalCollected.ToString("C0")</div>
+                </div>
+                <div class="data-hint text-soft small">
+                    <span class="text-success fw-bold">@Model.Stats.CollectionRate%</span> received
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Stats: Cashflow & Financial Progress -->
+<div class="card card-bordered mb-4">
+    <div class="card-inner py-3">
+        <div class="row align-items-center g-3">
+            <div class="col-md-3">
+                <span class="text-soft small">Cashflow Collection Progress</span>
+                <div class="progress progress-md mt-1">
+                    <div class="progress-bar bg-success" style="width: @Model.Stats.CollectionRate%;">@Model.Stats.CollectionRate%</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <span class="text-soft small">Pending Contract Receivables</span>
+                <div class="fw-bold fs-5 text-warning">@Model.Stats.TotalOutstanding.ToString("C2")</div>
+            </div>
+            <div class="col-md-3">
+                <span class="text-soft small">Pending Project Kickoffs</span>
+                <div class="fw-bold fs-5 text-primary">@Model.Stats.PendingProjects projects</div>
+            </div>
+            <div class="col-md-3">
+                <span class="text-soft small">Active System Users</span>
+                <div class="fw-bold fs-5 text-dark">@Model.Stats.TotalUsers team members</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tables & Activity Row -->
+<div class="row g-gs">
+    <!-- Left Column: Recent Projects -->
+    <div class="col-lg-7">
+        <div class="card card-bordered h-100">
+            <div class="card-inner border-bottom py-3">
+                <div class="card-title-group">
+                    <div class="card-title">
+                        <h6 class="title"><em class="icon ni ni-briefcase text-primary me-1"></em> Recent Project Registrations</h6>
+                    </div>
+                    <div class="card-tools">
+                        <a asp-page="/Project/List" class="btn btn-sm btn-link">View All</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-inner p-0">
+                <div class="table-responsive">
+                    <table class="table table-tranx">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Code</th>
+                                <th>Project & Client</th>
+                                <th class="text-end">Contract</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RecentProjects.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">No projects registered yet.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var p in Model.RecentProjects)
+                                {
+                                    var badge = p.Status switch
+                                    {
+                                        "Completed" => "bg-success",
+                                        "In Progress" => "bg-info",
+                                        "Pending" => "bg-warning",
+                                        "On Hold" => "bg-secondary",
+                                        "Cancelled" => "bg-danger",
+                                        _ => "bg-light text-dark"
+                                    };
+
+                                    <tr>
+                                        <td>
+                                            <a asp-page="/Project/Detail" asp-route-id="@p.ProjectId" class="badge badge-dim bg-outline-primary fw-bold">
+                                                @p.ProjectCode
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a asp-page="/Project/Detail" asp-route-id="@p.ProjectId" class="tb-lead text-dark">@p.ProjectName</a>
+                                            <div class="text-soft small">@p.CustomerName</div>
+                                        </td>
+                                        <td class="text-end"><span class="tb-amount">@p.Price.ToString("C0")</span></td>
+                                        <td class="text-center"><span class="badge badge-dim @badge">@p.Status</span></td>
+                                        <td class="text-end">
+                                            <a asp-page="/Project/Detail" asp-route-id="@p.ProjectId" class="btn btn-icon btn-sm btn-trigger text-primary">
+                                                <em class="icon ni ni-eye"></em>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Recent Payments & Quick Links -->
+    <div class="col-lg-5">
+        <div class="card card-bordered h-100">
+            <div class="card-inner border-bottom py-3">
+                <div class="card-title-group">
+                    <div class="card-title">
+                        <h6 class="title"><em class="icon ni ni-wallet text-success me-1"></em> Recent Payments & Billing</h6>
+                    </div>
+                    <div class="card-tools">
+                        <a asp-page="/Project/Payment" class="btn btn-sm btn-link">View All</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-inner p-0">
+                <div class="table-responsive">
+                    <table class="table table-tranx">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Ref #</th>
+                                <th>Project</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RecentPayments.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No payment records yet.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var pm in Model.RecentPayments)
+                                {
+                                    var badge = pm.Status == "Paid" ? "bg-success" : (pm.Status == "Pending" ? "bg-warning" : "bg-info");
+                                    <tr>
+                                        <td><span class="fw-bold">@(pm.PaymentReference ?? "N/A")</span></td>
+                                        <td><span class="tb-sub">@pm.ProjectCode</span></td>
+                                        <td class="text-end"><span class="tb-amount text-dark fw-bold">@pm.Amount.ToString("C0")</span></td>
+                                        <td class="text-center"><span class="badge badge-dim @badge">@pm.Status</span></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-inner border-top py-3 bg-light">
+                <h6 class="overline-title text-primary-alt mb-2">Quick Navigation Shortcuts</h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a asp-page="/Project/List" class="btn btn-outline-light w-100 justify-content-start text-dark">
+                            <em class="icon ni ni-tile-thumb me-1 text-primary"></em><span>Projects</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a asp-page="/Master/Customer" class="btn btn-outline-light w-100 justify-content-start text-dark">
+                            <em class="icon ni ni-building me-1 text-azure"></em><span>Customers</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a asp-page="/Master/Location" class="btn btn-outline-light w-100 justify-content-start text-dark">
+                            <em class="icon ni ni-map-pin me-1 text-teal"></em><span>Locations</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a asp-page="/Setup/UserMaintenance" class="btn btn-outline-light w-100 justify-content-start text-dark">
+                            <em class="icon ni ni-users me-1 text-info"></em><span>Users</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

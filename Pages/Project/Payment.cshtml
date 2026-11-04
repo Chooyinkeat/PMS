@@ -1,0 +1,532 @@
+@page
+@model PMS.Pages.Project.PaymentModel
+@{
+    ViewData["Title"] = "Payment Management";
+}
+
+<!-- Page Header -->
+<div class="nk-block-head nk-block-head-sm">
+    <div class="nk-block-between">
+        <div class="nk-block-head-content">
+            <h3 class="nk-block-title page-title">Payment & Invoicing Ledger</h3>
+            <div class="nk-block-des text-soft">
+                <p>Track customer milestone invoices, received payments, and pending project cashflows.</p>
+            </div>
+        </div>
+        <div class="nk-block-head-content">
+            <div class="toggle-wrap nk-block-tools-toggle">
+                <ul class="nk-block-tools g-3">
+                    @if (Model.PagePermission.CanPrint)
+                    {
+                        <li>
+                            <a asp-page="./Payment" asp-page-handler="ExportPdf"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-projectFilter="@Model.ProjectFilter"
+                               asp-route-statusFilter="@Model.StatusFilter"
+                               class="btn btn-outline-secondary">
+                                <em class="icon ni ni-printer"></em><span>Export PDF</span>
+                            </a>
+                        </li>
+                    }
+                    @if (Model.PagePermission.CanAdd)
+                    {
+                        <li>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                                <em class="icon ni ni-plus"></em><span>Record Payment</span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-fill alert-success alert-dismissible alert-icon">
+        <em class="icon ni ni-check-circle"></em>
+        @TempData["SuccessMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-fill alert-danger alert-dismissible alert-icon">
+        <em class="icon ni ni-cross-circle"></em>
+        @TempData["ErrorMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Filters -->
+<div class="card card-bordered mb-4">
+    <div class="card-inner py-3">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Search</label>
+                <div class="form-control-wrap">
+                    <div class="form-icon form-icon-left"><em class="icon ni ni-search"></em></div>
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="Search reference, description, project..." value="@Model.SearchTerm" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Project</label>
+                <select name="ProjectFilter" class="form-select">
+                    <option value="">All Projects</option>
+                    @foreach (var prj in Model.Projects)
+                    {
+                        <option value="@prj.ProjectId" selected="@(Model.ProjectFilter == prj.ProjectId)">@prj.ProjectCode - @prj.ProjectName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="StatusFilter" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="Paid" selected="@(Model.StatusFilter == "Paid")">Paid</option>
+                    <option value="Pending" selected="@(Model.StatusFilter == "Pending")">Pending</option>
+                    <option value="Partially Paid" selected="@(Model.StatusFilter == "Partially Paid")">Partially Paid</option>
+                    <option value="Overdue" selected="@(Model.StatusFilter == "Overdue")">Overdue</option>
+                    <option value="Cancelled" selected="@(Model.StatusFilter == "Cancelled")">Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary flex-grow-1"><em class="icon ni ni-filter"></em> Filter</button>
+                <a asp-page="./Payment" class="btn btn-icon btn-light" title="Reset"><em class="icon ni ni-reload"></em></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card card-bordered card-preview">
+    <div class="card-inner p-0">
+        <div class="table-responsive">
+            <table class="table table-tranx">
+                <thead>
+                    <tr class="tb-tnx-head bg-light">
+                        <th class="tb-tnx-id"><span class="text-secondary">#</span></th>
+                        <th>Reference #</th>
+                        <th>Project / Client</th>
+                        <th>Description</th>
+                        <th class="text-end">Amount</th>
+                        <th>Method</th>
+                        <th>Dates</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Payments.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">
+                                <em class="icon ni ni-inbox fs-1 mb-2"></em>
+                                <p>No payment records found.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var counter = Model.Pagination.StartItemIndex;
+                        @foreach (var p in Model.Payments)
+                        {
+                            var statusClass = p.PaymentStatus switch
+                            {
+                                "Paid" => "bg-success",
+                                "Pending" => "bg-warning",
+                                "Partially Paid" => "bg-info",
+                                "Overdue" => "bg-danger",
+                                _ => "bg-light text-dark"
+                            };
+
+                            <tr>
+                                <td class="tb-tnx-id"><span class="text-muted small">@(counter++)</span></td>
+                                <td><span class="badge badge-dim bg-outline-primary fw-bold">@(p.PaymentReference ?? "N/A")</span></td>
+                                <td>
+                                    <div>
+                                        <a asp-page="./Detail" asp-route-id="@p.ProjectId" class="tb-lead text-primary">@p.ProjectCode</a>
+                                        <div class="text-soft small">@p.CustomerName</div>
+                                    </div>
+                                </td>
+                                <td><span class="tb-sub">@p.PaymentDescription</span></td>
+                                <td class="text-end"><span class="tb-amount text-dark fw-bold">@p.Amount.ToString("C2")</span></td>
+                                <td><span class="badge badge-dim bg-light text-dark">@(p.PaymentMethod ?? "Transfer")</span></td>
+                                <td>
+                                    <div class="small">
+                                        <div><span class="text-muted">Due:</span> @(p.DueDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                                        @if (p.PaymentDate.HasValue)
+                                        {
+                                            <div><span class="text-success">Paid:</span> @p.PaymentDate.Value.ToString("yyyy-MM-dd")</div>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-dim @statusClass">@p.PaymentStatus</span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end align-items-center gap-1">
+                                        @if (Model.PagePermission.CanEdit && p.PaymentStatus != "Paid")
+                                        {
+                                            <form method="post" asp-page-handler="MarkPaid" class="d-inline">
+                                                <input type="hidden" name="id" value="@p.PaymentId" />
+                                                <button type="submit" class="btn btn-xs btn-outline-success" title="Mark as Paid">
+                                                    <em class="icon ni ni-check"></em>
+                                                </button>
+                                            </form>
+                                        }
+                                        <div class="dropdown">
+                                            <a href="#" class="dropdown-toggle btn btn-icon btn-trigger" data-bs-toggle="dropdown">
+                                                <em class="icon ni ni-more-h"></em>
+                                            </a>
+                                            <div class="dropdown-menu dropdown-menu-end">
+                                                <ul class="link-list-opt no-bdr">
+                                                    @if (Model.PagePermission.CanEdit)
+                                                    {
+                                                        <li>
+                                                            <a href="javascript:void(0)" onclick="openEditModal(@p.PaymentId, @p.ProjectId, '@JavaScriptEncoder.Default.Encode(p.PaymentReference ?? "")', '@JavaScriptEncoder.Default.Encode(p.PaymentDescription ?? "")', @p.Amount, '@(p.PaymentDate?.ToString("yyyy-MM-dd") ?? "")', '@(p.DueDate?.ToString("yyyy-MM-dd") ?? "")', '@JavaScriptEncoder.Default.Encode(p.PaymentMethod ?? "Bank Transfer")', '@JavaScriptEncoder.Default.Encode(p.PaymentStatus)', '@JavaScriptEncoder.Default.Encode(p.Remark ?? "")')">
+                                                                <em class="icon ni ni-edit"></em><span>Edit Payment</span>
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                    @if (Model.PagePermission.CanDelete)
+                                                    {
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="text-danger" onclick="openDeleteModal(@p.PaymentId, '@JavaScriptEncoder.Default.Encode(p.PaymentReference ?? "Invoice")')">
+                                                                <em class="icon ni ni-trash"></em><span>Delete Payment</span>
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.Pagination.TotalPages > 1)
+    {
+        <div class="card-inner py-3 border-top">
+            <div class="nk-block-between-md g-3">
+                <div class="g">
+                    <span class="text-muted small">Showing @Model.Pagination.StartItemIndex to @Model.Pagination.EndItemIndex of @Model.Pagination.TotalItems entries</span>
+                </div>
+                <div class="g">
+                    <ul class="pagination justify-content-center justify-content-md-start">
+                        <li class="page-item @(!Model.Pagination.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link" asp-page="./Payment"
+                               asp-route-currentPage="@(Model.Pagination.CurrentPage - 1)"
+                               asp-route-pageSize="@Model.Pagination.PageSize"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-projectFilter="@Model.ProjectFilter"
+                               asp-route-statusFilter="@Model.StatusFilter">Prev</a>
+                        </li>
+                        @for (int p = 1; p <= Model.Pagination.TotalPages; p++)
+                        {
+                            <li class="page-item @(p == Model.Pagination.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-page="./Payment"
+                                   asp-route-currentPage="@p"
+                                   asp-route-pageSize="@Model.Pagination.PageSize"
+                                   asp-route-searchTerm="@Model.SearchTerm"
+                                   asp-route-projectFilter="@Model.ProjectFilter"
+                                   asp-route-statusFilter="@Model.StatusFilter">@p</a>
+                            </li>
+                        }
+                        <li class="page-item @(!Model.Pagination.HasNextPage ? "disabled" : "")">
+                            <a class="page-link" asp-page="./Payment"
+                               asp-route-currentPage="@(Model.Pagination.CurrentPage + 1)"
+                               asp-route-pageSize="@Model.Pagination.PageSize"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-projectFilter="@Model.ProjectFilter"
+                               asp-route-statusFilter="@Model.StatusFilter">Next</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal: Add Payment -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Record Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.ProjectId">Project <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.ProjectId" class="form-select" required>
+                                        <option value="">-- Select Project --</option>
+                                        @foreach (var prj in Model.Projects)
+                                        {
+                                            <option value="@prj.ProjectId">@prj.ProjectCode - @prj.ProjectName</option>
+                                        }
+                                    </select>
+                                </div>
+                                <span asp-validation-for="Input.ProjectId" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PaymentReference">Reference / Invoice #</label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.PaymentReference" class="form-control" placeholder="Leave blank to auto-generate" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Amount">Amount ($) <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="number" step="0.01" asp-for="Input.Amount" class="form-control" required placeholder="0.00" />
+                                </div>
+                                <span asp-validation-for="Input.Amount" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PaymentMethod">Payment Method</label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.PaymentMethod" class="form-select">
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                        <option value="Online Payment">Online Payment</option>
+                                        <option value="Credit Card">Credit Card</option>
+                                        <option value="Cheque">Cheque</option>
+                                        <option value="Cash">Cash</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PaymentDescription">Description <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.PaymentDescription" class="form-control" required placeholder="e.g. Deposit milestone payment" />
+                                </div>
+                                <span asp-validation-for="Input.PaymentDescription" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.DueDate">Due Date</label>
+                                <div class="form-control-wrap">
+                                    <input type="date" asp-for="Input.DueDate" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PaymentDate">Payment Date</label>
+                                <div class="form-control-wrap">
+                                    <input type="date" asp-for="Input.PaymentDate" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PaymentStatus">Status</label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.PaymentStatus" class="form-select">
+                                        <option value="Pending">Pending</option>
+                                        <option value="Paid">Paid</option>
+                                        <option value="Partially Paid">Partially Paid</option>
+                                        <option value="Overdue">Overdue</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Remark">Remark / Notes</label>
+                                <div class="form-control-wrap">
+                                    <textarea asp-for="Input.Remark" class="form-control" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Save Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Payment -->
+<div class="modal fade" id="editPaymentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Payment Record</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Edit">
+                <input type="hidden" asp-for="Input.PaymentId" id="editPayId" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.ProjectId">Project <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.ProjectId" id="editPayProjectId" class="form-select" required>
+                                        @foreach (var prj in Model.Projects)
+                                        {
+                                            <option value="@prj.ProjectId">@prj.ProjectCode - @prj.ProjectName</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PaymentReference">Reference / Invoice #</label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.PaymentReference" id="editPayRef" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Amount">Amount ($) <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="number" step="0.01" asp-for="Input.Amount" id="editPayAmount" class="form-control" required />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PaymentMethod">Payment Method</label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.PaymentMethod" id="editPayMethod" class="form-select">
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                        <option value="Online Payment">Online Payment</option>
+                                        <option value="Credit Card">Credit Card</option>
+                                        <option value="Cheque">Cheque</option>
+                                        <option value="Cash">Cash</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PaymentDescription">Description <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.PaymentDescription" id="editPayDesc" class="form-control" required />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.DueDate">Due Date</label>
+                                <div class="form-control-wrap">
+                                    <input type="date" asp-for="Input.DueDate" id="editPayDue" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PaymentDate">Payment Date</label>
+                                <div class="form-control-wrap">
+                                    <input type="date" asp-for="Input.PaymentDate" id="editPayDate" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PaymentStatus">Status</label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.PaymentStatus" id="editPayStatus" class="form-select">
+                                        <option value="Pending">Pending</option>
+                                        <option value="Paid">Paid</option>
+                                        <option value="Partially Paid">Partially Paid</option>
+                                        <option value="Overdue">Overdue</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Remark">Remark / Notes</label>
+                                <div class="form-control-wrap">
+                                    <textarea asp-for="Input.Remark" id="editPayRemark" class="form-control" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Delete Confirmation -->
+<div class="modal fade" id="deletePaymentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title text-white"><em class="icon ni ni-alert-circle me-1"></em> Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Delete">
+                <input type="hidden" name="id" id="deletePayIdInput" />
+                <div class="modal-body">
+                    <p>Are you sure you want to delete payment record <strong id="deletePayRefTitle" class="text-danger"></strong>?</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger">Yes, Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openEditModal(id, projectId, ref, desc, amount, payDate, due, method, status, remark) {
+            document.getElementById('editPayId').value = id;
+            document.getElementById('editPayProjectId').value = projectId;
+            document.getElementById('editPayRef').value = ref;
+            document.getElementById('editPayDesc').value = desc;
+            document.getElementById('editPayAmount').value = amount;
+            document.getElementById('editPayDate').value = payDate;
+            document.getElementById('editPayDue').value = due;
+            document.getElementById('editPayMethod').value = method;
+            document.getElementById('editPayStatus').value = status;
+            document.getElementById('editPayRemark').value = remark;
+            var modal = new bootstrap.Modal(document.getElementById('editPaymentModal'));
+            modal.show();
+        }
+
+        function openDeleteModal(id, ref) {
+            document.getElementById('deletePayIdInput').value = id;
+            document.getElementById('deletePayRefTitle').innerText = ref;
+            var modal = new bootstrap.Modal(document.getElementById('deletePaymentModal'));
+            modal.show();
+        }
+    </script>
+}

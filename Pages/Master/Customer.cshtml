@@ -1,0 +1,366 @@
+@page
+@model PMS.Pages.Master.CustomerModel
+@{
+    ViewData["Title"] = "Customer Maintenance";
+}
+
+<!-- Page Header -->
+<div class="nk-block-head nk-block-head-sm">
+    <div class="nk-block-between">
+        <div class="nk-block-head-content">
+            <h3 class="nk-block-title page-title">Customer Maintenance</h3>
+            <div class="nk-block-des text-soft">
+                <p>Manage corporate clients, contacts, and track active project partnerships.</p>
+            </div>
+        </div>
+        <div class="nk-block-head-content">
+            <div class="toggle-wrap nk-block-tools-toggle">
+                <ul class="nk-block-tools g-3">
+                    @if (Model.PagePermission.CanPrint)
+                    {
+                        <li>
+                            <a asp-page="./Customer" asp-page-handler="ExportPdf"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-statusFilter="@Model.StatusFilter"
+                               class="btn btn-outline-secondary">
+                                <em class="icon ni ni-printer"></em><span>Export PDF</span>
+                            </a>
+                        </li>
+                    }
+                    @if (Model.PagePermission.CanAdd)
+                    {
+                        <li>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                                <em class="icon ni ni-plus"></em><span>Add Customer</span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-fill alert-success alert-dismissible alert-icon">
+        <em class="icon ni ni-check-circle"></em>
+        @TempData["SuccessMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-fill alert-danger alert-dismissible alert-icon">
+        <em class="icon ni ni-cross-circle"></em>
+        @TempData["ErrorMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Filters -->
+<div class="card card-bordered mb-4">
+    <div class="card-inner py-3">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">Search</label>
+                <div class="form-control-wrap">
+                    <div class="form-icon form-icon-left"><em class="icon ni ni-search"></em></div>
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="Search by customer code or name..." value="@Model.SearchTerm" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="StatusFilter" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active" selected="@(Model.StatusFilter == "active")">Active Only</option>
+                    <option value="inactive" selected="@(Model.StatusFilter == "inactive")">Inactive Only</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary flex-grow-1"><em class="icon ni ni-filter"></em> Filter</button>
+                <a asp-page="./Customer" class="btn btn-icon btn-light" title="Reset Filters"><em class="icon ni ni-reload"></em></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card card-bordered card-preview">
+    <div class="card-inner p-0">
+        <div class="table-responsive">
+            <table class="table table-tranx">
+                <thead>
+                    <tr class="tb-tnx-head bg-light">
+                        <th class="tb-tnx-id"><span class="text-secondary">#</span></th>
+                        <th>Code</th>
+                        <th>Customer / Client Name</th>
+                        <th class="text-center">Projects</th>
+                        <th class="text-center">PICs</th>
+                        <th class="text-center">Status</th>
+                        <th>Created Date</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Customers.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <em class="icon ni ni-inbox fs-1 mb-2"></em>
+                                <p>No customers found matching your criteria.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var counter = Model.Pagination.StartItemIndex;
+                        @foreach (var c in Model.Customers)
+                        {
+                            <tr>
+                                <td class="tb-tnx-id"><span class="text-muted small">@(counter++)</span></td>
+                                <td>
+                                    <span class="badge badge-dim bg-outline-primary fw-bold">@c.CustomerCode</span>
+                                </td>
+                                <td>
+                                    <div class="user-card">
+                                        <div class="user-avatar sm bg-primary-dim text-primary">
+                                            <em class="icon ni ni-building"></em>
+                                        </div>
+                                        <div class="user-name">
+                                            <span class="tb-lead">@c.CustomerName</span>
+                                            @if (!string.IsNullOrEmpty(c.Remark))
+                                            {
+                                                <div class="text-soft small">@c.Remark</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-dim @(c.ProjectCount > 0 ? "bg-info" : "bg-light text-muted")">
+                                        @c.ProjectCount project@(c.ProjectCount == 1 ? "" : "s")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-dim @(c.PicCount > 0 ? "bg-azure" : "bg-light text-muted")">
+                                        @c.PicCount contact@(c.PicCount == 1 ? "" : "s")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if (c.Status)
+                                    {
+                                        <span class="badge badge-dot badge-dot-xs bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-dot badge-dot-xs bg-danger">Inactive</span>
+                                    }
+                                </td>
+                                <td><span class="tb-date">@c.CreatedDate.ToString("yyyy-MM-dd")</span></td>
+                                <td class="text-end">
+                                    <div class="dropdown">
+                                        <a href="#" class="dropdown-toggle btn btn-icon btn-trigger" data-bs-toggle="dropdown">
+                                            <em class="icon ni ni-more-h"></em>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-end">
+                                            <ul class="link-list-opt no-bdr">
+                                                @if (Model.PagePermission.CanEdit)
+                                                {
+                                                    <li>
+                                                        <a href="javascript:void(0)" onclick="openEditModal(@c.CustomerId, '@JavaScriptEncoder.Default.Encode(c.CustomerCode)', '@JavaScriptEncoder.Default.Encode(c.CustomerName)', '@JavaScriptEncoder.Default.Encode(c.Remark ?? "")', @(c.Status ? "true" : "false"))">
+                                                            <em class="icon ni ni-edit"></em><span>Edit Customer</span>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (Model.PagePermission.CanDelete)
+                                                {
+                                                    <li>
+                                                        <a href="javascript:void(0)" class="text-danger" onclick="openDeleteModal(@c.CustomerId, '@JavaScriptEncoder.Default.Encode(c.CustomerName)')">
+                                                            <em class="icon ni ni-trash"></em><span>Delete Customer</span>
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.Pagination.TotalPages > 1)
+    {
+        <div class="card-inner py-3 border-top">
+            <div class="nk-block-between-md g-3">
+                <div class="g">
+                    <span class="text-muted small">Showing @Model.Pagination.StartItemIndex to @Model.Pagination.EndItemIndex of @Model.Pagination.TotalItems entries</span>
+                </div>
+                <div class="g">
+                    <ul class="pagination justify-content-center justify-content-md-start">
+                        <li class="page-item @(!Model.Pagination.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link" asp-page="./Customer"
+                               asp-route-currentPage="@(Model.Pagination.CurrentPage - 1)"
+                               asp-route-pageSize="@Model.Pagination.PageSize"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-statusFilter="@Model.StatusFilter">Prev</a>
+                        </li>
+                        @for (int p = 1; p <= Model.Pagination.TotalPages; p++)
+                        {
+                            <li class="page-item @(p == Model.Pagination.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-page="./Customer"
+                                   asp-route-currentPage="@p"
+                                   asp-route-pageSize="@Model.Pagination.PageSize"
+                                   asp-route-searchTerm="@Model.SearchTerm"
+                                   asp-route-statusFilter="@Model.StatusFilter">@p</a>
+                            </li>
+                        }
+                        <li class="page-item @(!Model.Pagination.HasNextPage ? "disabled" : "")">
+                            <a class="page-link" asp-page="./Customer"
+                               asp-route-currentPage="@(Model.Pagination.CurrentPage + 1)"
+                               asp-route-pageSize="@Model.Pagination.PageSize"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-statusFilter="@Model.StatusFilter">Next</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal: Add Customer -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label class="form-label" asp-for="Input.CustomerCode">Customer Code <span class="text-danger">*</span></label>
+                        <div class="form-control-wrap">
+                            <input type="text" asp-for="Input.CustomerCode" class="form-control" required placeholder="e.g. CUST-001" />
+                        </div>
+                        <span asp-validation-for="Input.CustomerCode" class="text-danger small"></span>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label" asp-for="Input.CustomerName">Customer / Company Name <span class="text-danger">*</span></label>
+                        <div class="form-control-wrap">
+                            <input type="text" asp-for="Input.CustomerName" class="form-control" required placeholder="e.g. Acme Corporation Sdn Bhd" />
+                        </div>
+                        <span asp-validation-for="Input.CustomerName" class="text-danger small"></span>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label" asp-for="Input.Remark">Remark / Notes</label>
+                        <div class="form-control-wrap">
+                            <textarea asp-for="Input.Remark" class="form-control" rows="3" placeholder="Optional background or relationship notes..."></textarea>
+                        </div>
+                    </div>
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" asp-for="Input.Status" class="custom-control-input" id="addCustStatus" checked />
+                        <label class="custom-control-label" for="addCustStatus">Active Client</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Create Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Customer -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Edit">
+                <input type="hidden" asp-for="Input.CustomerId" id="editCustId" />
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label class="form-label" asp-for="Input.CustomerCode">Customer Code <span class="text-danger">*</span></label>
+                        <div class="form-control-wrap">
+                            <input type="text" asp-for="Input.CustomerCode" id="editCustCode" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label" asp-for="Input.CustomerName">Customer / Company Name <span class="text-danger">*</span></label>
+                        <div class="form-control-wrap">
+                            <input type="text" asp-for="Input.CustomerName" id="editCustName" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label" asp-for="Input.Remark">Remark / Notes</label>
+                        <div class="form-control-wrap">
+                            <textarea asp-for="Input.Remark" id="editCustRemark" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" asp-for="Input.Status" class="custom-control-input" id="editCustStatus" />
+                        <label class="custom-control-label" for="editCustStatus">Active Client</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Delete Confirmation -->
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title text-white"><em class="icon ni ni-alert-circle me-1"></em> Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Delete">
+                <input type="hidden" name="id" id="deleteCustId" />
+                <div class="modal-body">
+                    <p>Are you sure you want to delete customer <strong id="deleteCustName" class="text-danger"></strong>?</p>
+                    <p class="text-soft small">Customers with registered projects or contact persons cannot be deleted.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger">Yes, Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openEditModal(id, code, name, remark, status) {
+            document.getElementById('editCustId').value = id;
+            document.getElementById('editCustCode').value = code;
+            document.getElementById('editCustName').value = name;
+            document.getElementById('editCustRemark').value = remark;
+            document.getElementById('editCustStatus').checked = status;
+            var modal = new bootstrap.Modal(document.getElementById('editCustomerModal'));
+            modal.show();
+        }
+
+        function openDeleteModal(id, name) {
+            document.getElementById('deleteCustId').value = id;
+            document.getElementById('deleteCustName').innerText = name;
+            var modal = new bootstrap.Modal(document.getElementById('deleteCustomerModal'));
+            modal.show();
+        }
+    </script>
+}

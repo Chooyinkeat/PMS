@@ -1,0 +1,148 @@
+﻿@page
+@model PMS.Pages.LoginModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en" class="js">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Project Management System - sign in to manage your projects, tasks and teams.">
+    <link rel="shortcut icon" href="~/images/favicon.png">
+    <title>Login | PMS</title>
+    <link rel="stylesheet" href="~/assets/css/dashlite.css?ver=3.2.0">
+    <link id="skin-default" rel="stylesheet" href="~/assets/css/theme.css?ver=3.2.0">
+</head>
+
+<body class="nk-body bg-white npc-general pg-auth">
+    <div class="nk-app-root">
+        <div class="nk-main">
+            <div class="nk-wrap nk-wrap-nosidebar">
+                <div class="nk-content">
+                    <div class="nk-split nk-split-page nk-split-lg">
+
+                        <!-- LEFT: Login form -->
+                        <div class="nk-split-content nk-block-area nk-block-area-column nk-auth-container bg-white">
+                            <div class="absolute-top-right d-lg-none p-3 p-sm-5">
+                                <a href="#" class="toggle btn-white btn btn-icon btn-light" data-target="athPromo"><em class="icon ni ni-info"></em></a>
+                            </div>
+
+                            <div class="nk-block nk-block-middle nk-auth-body">
+                                <div class="brand-logo pb-5">
+                                    <a asp-page="/Index" class="logo-link">
+                                        <img class="logo-light logo-img logo-img-lg" src="~/images/logo.png" srcset="~/images/logo2x.png 2x" alt="PMS">
+                                        <img class="logo-dark logo-img logo-img-lg" src="~/images/logo-dark.png" srcset="~/images/logo-dark2x.png 2x" alt="PMS">
+                                    </a>
+                                </div>
+
+                                <div class="nk-block-head">
+                                    <div class="nk-block-head-content">
+                                        <h5 class="nk-block-title">Welcome to PMS</h5>
+                                        <div class="nk-block-des">
+                                            <p>Sign in with your email or username to manage your projects and tasks.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <form method="post" class="form-validate is-alter" autocomplete="off">
+                                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                                    {
+                                        <div class="alert alert-danger">@Model.ErrorMessage</div>
+                                    }
+
+                                    <div class="form-group">
+                                        <div class="form-label-group">
+                                            <label class="form-label" for="Email">Email or Username</label>
+                                        </div>
+                                        <div class="form-control-wrap">
+                                            <input autocomplete="off" type="text" class="form-control form-control-lg"
+                                                   required id="Email" name="Email"
+                                                   placeholder="Enter your email or username">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="form-control-wrap">
+                                            <a tabindex="-1" href="#" class="form-icon form-icon-right passcode-switch lg" data-target="password">
+                                                <em class="passcode-icon icon-show icon ni ni-eye"></em>
+                                                <em class="passcode-icon icon-hide icon ni ni-eye-off"></em>
+                                            </a>
+                                            <input autocomplete="new-password" type="password" class="form-control form-control-lg"
+                                                   required id="password" name="Password"
+                                                   placeholder="Enter your password">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-lg btn-primary btn-block">Sign in</button>
+                                    </div>
+                                </form>
+
+                                <div class="form-note-s2 pt-4">
+                                    Need access? Contact your system administrator.
+                                </div>
+                            </div>
+
+                            <div class="nk-block nk-auth-footer">
+                                <div class="mt-3">
+                                    <p>&copy; @DateTime.Now.Year PMS - Project Management System. All Rights Reserved.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: PMS feature slider -->
+                        <div class="nk-split-content nk-split-stretch bg-lighter d-flex toggle-break-lg toggle-slide toggle-slide-right"
+                             data-toggle-body="true" data-content="athPromo" data-toggle-screen="lg" data-toggle-overlay="true">
+                            <div class="slider-wrap w-100 w-max-550px p-3 p-sm-5 m-auto">
+                                <div class="slider-init" data-slick='{"dots":true, "arrows":false}'>
+                                    <div class="slider-item">
+                                        <div class="nk-feature nk-feature-center">
+                                            <div class="nk-feature-img">
+                                                <img class="round" src="~/images/slides/promo-a.png" srcset="~/images/slides/promo-a2x.png 2x" alt="">
+                                            </div>
+                                            <div class="nk-feature-content py-4 p-sm-5">
+                                                <h4>Manage Projects</h4>
+                                                <p>Plan, organize and track every project from kickoff to delivery in one place.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="slider-item">
+                                        <div class="nk-feature nk-feature-center">
+                                            <div class="nk-feature-img">
+                                                <img class="round" src="~/images/slides/promo-b.png" srcset="~/images/slides/promo-b2x.png 2x" alt="">
+                                            </div>
+                                            <div class="nk-feature-content py-4 p-sm-5">
+                                                <h4>Assign &amp; Track Tasks</h4>
+                                                <p>Keep your team aligned with clear ownership, deadlines and status updates.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="slider-item">
+                                        <div class="nk-feature nk-feature-center">
+                                            <div class="nk-feature-img">
+                                                <img class="round" src="~/images/slides/promo-c.png" srcset="~/images/slides/promo-c2x.png 2x" alt="">
+                                            </div>
+                                            <div class="nk-feature-content py-4 p-sm-5">
+                                                <h4>Monitor Progress</h4>
+                                                <p>Get real-time visibility into milestones, workloads and project health.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slider-dots"></div>
+                                <div class="slider-arrows"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/assets/js/bundle.js?ver=3.2.0"></script>
+    <script src="~/assets/js/scripts.js?ver=3.2.0"></script>
+</body>
+</html>

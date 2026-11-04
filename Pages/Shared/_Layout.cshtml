@@ -1,0 +1,256 @@
+@using System.Security.Claims
+@using PMS.Models.Common
+@inject PMS.Services.IPermissionService PermissionService
+@{
+    var userName = User.Identity?.Name ?? "Guest";
+    var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "";
+    var initials = string.Concat(
+        userName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Take(2)
+                .Select(p => char.ToUpper(p[0])));
+    if (string.IsNullOrEmpty(initials)) { initials = "?"; }
+
+    var perms = await PermissionService.GetAllPermissionsAsync(User);
+    var hasSetupAccess = perms[AppModules.User].CanView || perms[AppModules.UserGroup].CanView || perms[AppModules.Document].CanView;
+    var hasMasterAccess = perms[AppModules.Customer].CanView || perms[AppModules.Location].CanView || perms[AppModules.PersonInCharge].CanView;
+    var hasProjectAccess = perms[AppModules.Project].CanView || perms[AppModules.Payment].CanView;
+}
+<!DOCTYPE html>
+<html lang="en" class="js">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Project Management System">
+    <link rel="shortcut icon" href="~/images/favicon.png">
+    <title>@ViewData["Title"] - PMS</title>
+    <link rel="stylesheet" href="~/assets/css/dashlite.css?ver=3.2.0">
+    <link id="skin-default" rel="stylesheet" href="~/assets/css/theme.css?ver=3.2.0">
+</head>
+
+<body class="nk-body bg-lighter npc-general has-sidebar">
+    <div class="nk-app-root">
+        <div class="nk-main">
+
+            <!-- SIDEBAR -->
+            <div class="nk-sidebar nk-sidebar-fixed is-dark" data-content="sidebarMenu">
+                <div class="nk-sidebar-element nk-sidebar-head">
+                    <div class="nk-menu-trigger">
+                        <a href="#" class="nk-nav-toggle nk-quick-nav-icon d-xl-none" data-target="sidebarMenu"><em class="icon ni ni-arrow-left"></em></a>
+                        <a href="#" class="nk-nav-compact nk-quick-nav-icon d-none d-xl-inline-flex" data-target="sidebarMenu"><em class="icon ni ni-menu"></em></a>
+                    </div>
+                    <div class="nk-sidebar-brand">
+                        <a href="~/" class="logo-link nk-sidebar-logo">
+                            <span class="fs-4 fw-bold text-white letter-spacing-1">PMS<span class="text-primary">.</span></span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nk-sidebar-element nk-sidebar-body">
+                    <div class="nk-sidebar-content">
+                        <div class="nk-sidebar-menu" data-simplebar>
+                            <ul class="nk-menu">
+                                <li class="nk-menu-heading">
+                                    <h6 class="overline-title text-primary-alt">Main Menu</h6>
+                                </li>
+
+                                <!-- Dashboard -->
+                                <li class="nk-menu-item">
+                                    <a href="~/" class="nk-menu-link">
+                                        <span class="nk-menu-icon"><em class="icon ni ni-dashboard"></em></span>
+                                        <span class="nk-menu-text">Dashboard</span>
+                                    </a>
+                                </li>
+
+                                <!-- Project Management -->
+                                @if (hasProjectAccess)
+                                {
+                                    <li class="nk-menu-item has-sub">
+                                        <a href="#" class="nk-menu-link nk-menu-toggle">
+                                            <span class="nk-menu-icon"><em class="icon ni ni-tile-thumb"></em></span>
+                                            <span class="nk-menu-text">Projects</span>
+                                        </a>
+                                        <ul class="nk-menu-sub">
+                                            @if (perms[AppModules.Project].CanView)
+                                            {
+                                                <li class="nk-menu-item">
+                                                    <a href="~/Project/Cards" class="nk-menu-link"><span class="nk-menu-text">Project Cards</span></a>
+                                                </li>
+                                                <li class="nk-menu-item">
+                                                    <a href="~/Project/List" class="nk-menu-link"><span class="nk-menu-text">Project List</span></a>
+                                                </li>
+                                            }
+                                            @if (perms[AppModules.Payment].CanView)
+                                            {
+                                                <li class="nk-menu-item">
+                                                    <a href="~/Project/Payment" class="nk-menu-link"><span class="nk-menu-text">Payments</span></a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </li>
+                                }
+
+                                <!-- Master Data -->
+                                @if (hasMasterAccess)
+                                {
+                                    <li class="nk-menu-item has-sub">
+                                        <a href="#" class="nk-menu-link nk-menu-toggle">
+                                            <span class="nk-menu-icon"><em class="icon ni ni-layers"></em></span>
+                                            <span class="nk-menu-text">Master Data</span>
+                                        </a>
+                                        <ul class="nk-menu-sub">
+                                            @if (perms[AppModules.Customer].CanView)
+                                            {
+                                                <li class="nk-menu-item">
+                                                    <a href="~/Master/Customer" class="nk-menu-link"><span class="nk-menu-text">Customers</span></a>
+                                                </li>
+                                            }
+                                            @if (perms[AppModules.PersonInCharge].CanView)
+                                            {
+                                                <li class="nk-menu-item">
+                                                    <a href="~/Master/PersonInCharge" class="nk-menu-link"><span class="nk-menu-text">Persons In Charge</span></a>
+                                                </li>
+                                            }
+                                            @if (perms[AppModules.Location].CanView)
+                                            {
+                                                <li class="nk-menu-item">
+                                                    <a href="~/Master/Location" class="nk-menu-link"><span class="nk-menu-text">Locations</span></a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </li>
+                                }
+
+                                <!-- System Setup -->
+                                @if (hasSetupAccess)
+                                {
+                                    <li class="nk-menu-item has-sub">
+                                        <a href="#" class="nk-menu-link nk-menu-toggle">
+                                            <span class="nk-menu-icon"><em class="icon ni ni-setting"></em></span>
+                                            <span class="nk-menu-text">Setup</span>
+                                        </a>
+                                        <ul class="nk-menu-sub">
+                                            @if (perms[AppModules.User].CanView)
+                                            {
+                                                <li class="nk-menu-item">
+                                                    <a href="~/Setup/UserMaintenance" class="nk-menu-link"><span class="nk-menu-text">User Maintenance</span></a>
+                                                </li>
+                                            }
+                                            @if (perms[AppModules.UserGroup].CanView)
+                                            {
+                                                <li class="nk-menu-item">
+                                                    <a href="~/Setup/UserGroupMaintenance" class="nk-menu-link"><span class="nk-menu-text">User Groups & Roles</span></a>
+                                                </li>
+                                            }
+                                            @if (perms[AppModules.Document].CanView)
+                                            {
+                                                <li class="nk-menu-item">
+                                                    <a href="~/Setup/DocMaintenance" class="nk-menu-link"><span class="nk-menu-text">Document Center</span></a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </li>
+                                }
+                            </ul><!-- .nk-menu -->
+                        </div><!-- .nk-sidebar-menu -->
+                    </div><!-- .nk-sidebar-content -->
+                </div><!-- .nk-sidebar-element -->
+            </div><!-- .nk-sidebar -->
+
+            <!-- MAIN WRAP -->
+            <div class="nk-wrap">
+
+                <!-- HEADER -->
+                <div class="nk-header nk-header-fixed is-light">
+                    <div class="container-fluid">
+                        <div class="nk-header-wrap">
+                            <div class="nk-menu-trigger d-xl-none ms-n1">
+                                <a href="#" class="nk-nav-toggle nk-quick-nav-icon" data-target="sidebarMenu"><em class="icon ni ni-menu"></em></a>
+                            </div>
+                            <div class="nk-header-brand d-xl-none">
+                                <a href="~/" class="logo-link">
+                                    <span class="fs-4 fw-bold letter-spacing-1">PMS<span class="text-primary">.</span></span>
+                                </a>
+                            </div>
+
+                            <div class="nk-header-tools">
+                                <ul class="nk-quick-nav">
+                                    <li class="dropdown user-dropdown">
+                                        <!-- Toggle -->
+                                        <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">
+                                            <div class="user-toggle">
+                                                <div class="user-avatar sm bg-primary">
+                                                    <span>@initials</span>
+                                                </div>
+                                                <div class="user-info d-none d-md-block">
+                                                    <div class="user-status">Logged in</div>
+                                                    <div class="user-name dropdown-indicator">@userName</div>
+                                                </div>
+                                            </div>
+                                        </a>
+
+                                        <!-- Dropdown content -->
+                                        <div class="dropdown-menu dropdown-menu-md dropdown-menu-end dropdown-menu-s1">
+                                            <div class="dropdown-inner user-card-wrap bg-lighter d-none d-md-block">
+                                                <div class="user-card">
+                                                    <div class="user-avatar bg-primary">
+                                                        <span>@initials</span>
+                                                    </div>
+                                                    <div class="user-info">
+                                                        <span class="lead-text">@userName</span>
+                                                        <span class="sub-text">@userEmail</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="dropdown-inner">
+                                                <ul class="link-list">
+                                                    <li>
+                                                        <form method="post" asp-page="/Logout" id="logoutForm">
+                                                            <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="text-danger">
+                                                                <em class="icon ni ni-signout"></em><span>Sign out</span>
+                                                            </a>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </li><!-- .user-dropdown -->
+                                </ul><!-- .nk-quick-nav -->
+                            </div><!-- .nk-header-tools -->
+                        </div><!-- .nk-header-wrap -->
+                    </div>
+                </div><!-- .nk-header -->
+
+                <!-- CONTENT -->
+                <div class="nk-content">
+                    <div class="container-fluid">
+                        <div class="nk-content-inner">
+                            <div class="nk-content-body">
+                                <main role="main" class="pb-3">
+                                    @RenderBody()
+                                </main>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOOTER -->
+                <div class="nk-footer">
+                    <div class="container-fluid">
+                        <div class="nk-footer-wrap">
+                            <div class="nk-footer-copyright">&copy; @DateTime.Now.Year PMS - Project Management System. All rights reserved.</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- .nk-wrap -->
+        </div><!-- .nk-main -->
+    </div><!-- .nk-app-root -->
+
+    <script src="~/assets/js/bundle.js?ver=3.2.0"></script>
+    <script src="~/assets/js/scripts.js?ver=3.2.0"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

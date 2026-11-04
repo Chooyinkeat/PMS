@@ -1,0 +1,519 @@
+@page "{id:int}"
+@model PMS.Pages.Project.DetailModel
+@{
+    ViewData["Title"] = $"{Model.Project.ProjectCode} - Details";
+
+    var statusBadgeClass = Model.Project.Status switch
+    {
+        "Completed" => "bg-success",
+        "In Progress" => "bg-info",
+        "Pending" => "bg-warning",
+        "On Hold" => "bg-secondary",
+        "Cancelled" => "bg-danger",
+        _ => "bg-light text-dark"
+    };
+}
+
+<!-- Page Header -->
+<div class="nk-block-head nk-block-head-sm">
+    <div class="nk-block-between">
+        <div class="nk-block-head-content">
+            <div class="nk-block-des text-soft mb-1">
+                <a asp-page="./List" class="back-to"><em class="icon ni ni-arrow-left"></em> Back to Project Register</a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <h3 class="nk-block-title page-title">@Model.Project.ProjectName</h3>
+                <span class="badge badge-dim @statusBadgeClass fs-6">@Model.Project.Status</span>
+                <span class="badge badge-dim bg-outline-primary fs-6">@Model.Project.ProjectCode</span>
+            </div>
+            <div class="nk-block-des text-soft">
+                <span>Client: <strong>@Model.Project.CustomerName</strong> (@Model.Project.CustomerCode)</span>
+            </div>
+        </div>
+        <div class="nk-block-head-content">
+            <ul class="nk-block-tools g-3">
+                @if (Model.PagePermission.CanPrint)
+                {
+                    <li>
+                        <a asp-page="./Detail" asp-page-handler="ExportDossierPdf" asp-route-id="@Model.Project.ProjectId" class="btn btn-outline-primary">
+                            <em class="icon ni ni-file-pdf"></em><span>Export Project Dossier (PDF)</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-fill alert-success alert-dismissible alert-icon">
+        <em class="icon ni ni-check-circle"></em>
+        @TempData["SuccessMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-fill alert-danger alert-dismissible alert-icon">
+        <em class="icon ni ni-cross-circle"></em>
+        @TempData["ErrorMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- KPI Cards -->
+<div class="row g-gs mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-bordered">
+            <div class="card-inner">
+                <div class="card-title-group align-start mb-2">
+                    <div class="card-title">
+                        <h6 class="title">Contract Value</h6>
+                    </div>
+                    <div class="card-tools">
+                        <em class="icon ni ni-money text-primary fs-3"></em>
+                    </div>
+                </div>
+                <div class="data-group">
+                    <div class="amount fw-bold fs-4">@Model.Project.Price.ToString("C2")</div>
+                </div>
+                <div class="data-hint text-soft small">Full project contract sum</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-bordered">
+            <div class="card-inner">
+                <div class="card-title-group align-start mb-2">
+                    <div class="card-title">
+                        <h6 class="title">Total Collected</h6>
+                    </div>
+                    <div class="card-tools">
+                        <em class="icon ni ni-check-circle-cut text-success fs-3"></em>
+                    </div>
+                </div>
+                <div class="data-group">
+                    <div class="amount fw-bold fs-4 text-success">@Model.Project.TotalPaid.ToString("C2")</div>
+                </div>
+                <div class="data-hint text-soft small">@Model.Project.PaymentPercent% received</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-bordered">
+            <div class="card-inner">
+                <div class="card-title-group align-start mb-2">
+                    <div class="card-title">
+                        <h6 class="title">Outstanding Balance</h6>
+                    </div>
+                    <div class="card-tools">
+                        <em class="icon ni ni-wallet text-warning fs-3"></em>
+                    </div>
+                </div>
+                <div class="data-group">
+                    <div class="amount fw-bold fs-4 text-warning">@Model.Project.RemainingBalance.ToString("C2")</div>
+                </div>
+                <div class="data-hint text-soft small">Pending client payments</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-bordered">
+            <div class="card-inner">
+                <div class="card-title-group align-start mb-2">
+                    <div class="card-title">
+                        <h6 class="title">Team Size</h6>
+                    </div>
+                    <div class="card-tools">
+                        <em class="icon ni ni-users text-info fs-3"></em>
+                    </div>
+                </div>
+                <div class="data-group">
+                    <div class="amount fw-bold fs-4">@Model.Project.Members.Count</div>
+                </div>
+                <div class="data-hint text-soft small">Assigned specialists</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs & Main Content -->
+<div class="card card-bordered">
+    <div class="card-inner p-0">
+        <ul class="nav nav-tabs nav-tabs-mb-icon nav-tabs-card">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#tabOverview">
+                    <em class="icon ni ni-file-text"></em><span>Overview & Scope</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tabTeam">
+                    <em class="icon ni ni-users"></em><span>Team Roster (@Model.Project.Members.Count)</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tabPayments">
+                    <em class="icon ni ni-wallet"></em><span>Payments & Billing (@Model.Project.Payments.Count)</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content p-4">
+            <!-- TAB 1: OVERVIEW -->
+            <div class="tab-pane active" id="tabOverview">
+                <div class="row g-gs">
+                    <div class="col-md-7">
+                        <h6 class="overline-title text-primary-alt mb-2">Scope of Work & Deliverables</h6>
+                        <div class="p-3 bg-light rounded mb-4" style="min-height: 120px;">
+                            @if (!string.IsNullOrWhiteSpace(Model.Project.Description))
+                            {
+                                <p class="mb-0 text-dark" style="white-space: pre-wrap;">@Model.Project.Description</p>
+                            }
+                            else
+                            {
+                                <p class="text-muted fst-italic mb-0">No scope description provided for this project.</p>
+                            }
+                        </div>
+
+                        <h6 class="overline-title text-primary-alt mb-2">Internal Notes & Remarks</h6>
+                        <div class="p-3 bg-light rounded">
+                            @if (!string.IsNullOrWhiteSpace(Model.Project.Remark))
+                            {
+                                <p class="mb-0 text-dark" style="white-space: pre-wrap;">@Model.Project.Remark</p>
+                            }
+                            else
+                            {
+                                <p class="text-muted fst-italic mb-0">No internal remarks recorded.</p>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="card card-bordered bg-lighter">
+                            <div class="card-inner">
+                                <h6 class="overline-title text-primary-alt mb-3">Project Metadata</h6>
+                                <ul class="list-group list-group-flush bg-transparent">
+                                    <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                                        <span class="text-soft">Project Code</span>
+                                        <span class="fw-bold">@Model.Project.ProjectCode</span>
+                                    </li>
+                                    <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                                        <span class="text-soft">Customer Name</span>
+                                        <span class="fw-bold">@Model.Project.CustomerName</span>
+                                    </li>
+                                    <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                                        <span class="text-soft">Start Date</span>
+                                        <span class="fw-bold">@(Model.Project.StartDate?.ToString("yyyy-MM-dd") ?? "Not scheduled")</span>
+                                    </li>
+                                    <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                                        <span class="text-soft">Target Due Date</span>
+                                        <span class="fw-bold">@(Model.Project.DueDate?.ToString("yyyy-MM-dd") ?? "Not scheduled")</span>
+                                    </li>
+                                    <li class="list-group-item bg-transparent d-flex justify-content-between px-0">
+                                        <span class="text-soft">Registered On</span>
+                                        <span class="fw-bold">@Model.Project.CreatedDate.ToString("yyyy-MM-dd HH:mm")</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: TEAM MEMBERS -->
+            <div class="tab-pane" id="tabTeam">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="overline-title text-primary-alt mb-0">Assigned Team Members</h6>
+                    @if (Model.PagePermission.CanEdit)
+                    {
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignMemberModal">
+                            <em class="icon ni ni-user-add"></em><span>Assign Member</span>
+                        </button>
+                    }
+                </div>
+
+                @if (Model.Project.Members.Count == 0)
+                {
+                    <div class="text-center py-4 text-muted border rounded bg-light">
+                        <em class="icon ni ni-users fs-2 mb-2"></em>
+                        <p>No team members have been assigned to this project yet.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive border rounded">
+                        <table class="table table-tranx">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Email</th>
+                                    <th>Project Role</th>
+                                    <th>Assigned Date</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var m in Model.Project.Members)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="user-card">
+                                                <div class="user-avatar sm bg-primary-dim text-primary">
+                                                    <span>@(m.UserName.Length >= 2 ? m.UserName.Substring(0, 2).ToUpper() : m.UserName.ToUpper())</span>
+                                                </div>
+                                                <div class="user-name">
+                                                    <span class="tb-lead">@m.UserName</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span class="tb-sub">@m.Email</span></td>
+                                        <td>
+                                            <span class="badge badge-dim @(m.MemberRole.Contains("Manager") || m.MemberRole.Contains("Lead") ? "bg-primary" : "bg-light text-dark")">
+                                                @m.MemberRole
+                                            </span>
+                                        </td>
+                                        <td><span class="tb-date">@m.AssignedDate.ToString("yyyy-MM-dd")</span></td>
+                                        <td class="text-end">
+                                            @if (Model.PagePermission.CanEdit)
+                                            {
+                                                <form method="post" asp-page-handler="RemoveMember" class="d-inline" onsubmit="return confirm('Remove @m.UserName from this project?');">
+                                                    <input type="hidden" name="memberId" value="@m.ProjectMemberId" />
+                                                    <input type="hidden" name="projectId" value="@Model.Project.ProjectId" />
+                                                    <button type="submit" class="btn btn-icon btn-sm btn-trigger text-danger" title="Remove Member">
+                                                        <em class="icon ni ni-user-cross"></em>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <!-- TAB 3: PAYMENTS -->
+            <div class="tab-pane" id="tabPayments">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="overline-title text-primary-alt mb-0">Project Billings & Payment History</h6>
+                    @if (Model.PagePermission.CanEdit)
+                    {
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
+                            <em class="icon ni ni-plus"></em><span>Record Payment / Invoice</span>
+                        </button>
+                    }
+                </div>
+
+                @if (Model.Project.Payments.Count == 0)
+                {
+                    <div class="text-center py-4 text-muted border rounded bg-light">
+                        <em class="icon ni ni-wallet fs-2 mb-2"></em>
+                        <p>No payment or invoice records registered for this project.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive border rounded">
+                        <table class="table table-tranx">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Reference #</th>
+                                    <th>Description</th>
+                                    <th class="text-end">Amount</th>
+                                    <th>Method</th>
+                                    <th>Dates</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in Model.Project.Payments)
+                                {
+                                    var pStatusClass = p.PaymentStatus switch
+                                    {
+                                        "Paid" => "bg-success",
+                                        "Pending" => "bg-warning",
+                                        "Partially Paid" => "bg-info",
+                                        "Overdue" => "bg-danger",
+                                        _ => "bg-light text-dark"
+                                    };
+
+                                    <tr>
+                                        <td><span class="fw-bold">@(p.PaymentReference ?? "N/A")</span></td>
+                                        <td><span class="tb-sub">@p.PaymentDescription</span></td>
+                                        <td class="text-end"><span class="tb-amount text-dark fw-bold">@p.Amount.ToString("C2")</span></td>
+                                        <td><span class="badge badge-dim bg-light text-dark">@(p.PaymentMethod ?? "Transfer")</span></td>
+                                        <td>
+                                            <div class="small">
+                                                <div><span class="text-muted">Due:</span> @(p.DueDate?.ToString("yyyy-MM-dd") ?? "-")</div>
+                                                @if (p.PaymentDate.HasValue)
+                                                {
+                                                    <div><span class="text-success">Paid:</span> @p.PaymentDate.Value.ToString("yyyy-MM-dd")</div>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge badge-dim @pStatusClass">@p.PaymentStatus</span>
+                                        </td>
+                                        <td class="text-end">
+                                            @if (Model.PagePermission.CanEdit && p.PaymentStatus != "Paid")
+                                            {
+                                                <form method="post" asp-page-handler="UpdatePaymentStatus" class="d-inline">
+                                                    <input type="hidden" name="paymentId" value="@p.PaymentId" />
+                                                    <input type="hidden" name="projectId" value="@Model.Project.ProjectId" />
+                                                    <input type="hidden" name="newStatus" value="Paid" />
+                                                    <button type="submit" class="btn btn-xs btn-outline-success">
+                                                        <em class="icon ni ni-check"></em> Mark Paid
+                                                    </button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Assign Member -->
+<div class="modal fade" id="assignMemberModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Team Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="AssignMember">
+                <input type="hidden" asp-for="MemberInput.ProjectId" value="@Model.Project.ProjectId" />
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label class="form-label" asp-for="MemberInput.UserId">Select Specialist / User <span class="text-danger">*</span></label>
+                        <div class="form-control-wrap">
+                            <select asp-for="MemberInput.UserId" class="form-select" required>
+                                <option value="">-- Choose User --</option>
+                                @foreach (var u in Model.AvailableUsers)
+                                {
+                                    <option value="@u.UserId">@u.UserName (@u.Email)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label" asp-for="MemberInput.MemberRole">Project Role <span class="text-danger">*</span></label>
+                        <div class="form-control-wrap">
+                            <select asp-for="MemberInput.MemberRole" class="form-select" required>
+                                <option value="Project Manager">Project Manager</option>
+                                <option value="Lead Developer">Lead Developer</option>
+                                <option value="Senior Developer">Senior Developer</option>
+                                <option value="Fullstack Engineer">Fullstack Engineer</option>
+                                <option value="UI/UX Designer">UI/UX Designer</option>
+                                <option value="QA Engineer">QA Engineer</option>
+                                <option value="Business Analyst">Business Analyst</option>
+                                <option value="Member">Member</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label" asp-for="MemberInput.Remark">Assignment Notes</label>
+                        <div class="form-control-wrap">
+                            <textarea asp-for="MemberInput.Remark" class="form-control" rows="2" placeholder="Responsibilities, allocation %..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Assign Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Record Payment -->
+<div class="modal fade" id="recordPaymentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Record Project Payment / Invoice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="AddPayment">
+                <input type="hidden" asp-for="PaymentInput.ProjectId" value="@Model.Project.ProjectId" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="PaymentInput.PaymentReference">Reference / Invoice #</label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="PaymentInput.PaymentReference" class="form-control" placeholder="Leave blank to auto-generate" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="PaymentInput.Amount">Amount ($) <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="number" step="0.01" asp-for="PaymentInput.Amount" class="form-control" required placeholder="0.00" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="PaymentInput.PaymentDescription">Payment Description <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="PaymentInput.PaymentDescription" class="form-control" required placeholder="e.g. Milestone 1 - Architecture & Setup Deposit" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="PaymentInput.PaymentMethod">Payment Method</label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="PaymentInput.PaymentMethod" class="form-select">
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                        <option value="Online Payment">Online Payment</option>
+                                        <option value="Credit Card">Credit Card</option>
+                                        <option value="Cheque">Cheque</option>
+                                        <option value="Cash">Cash</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="PaymentInput.DueDate">Due Date</label>
+                                <div class="form-control-wrap">
+                                    <input type="date" asp-for="PaymentInput.DueDate" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="PaymentInput.PaymentStatus">Payment Status</label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="PaymentInput.PaymentStatus" class="form-select">
+                                        <option value="Pending">Pending</option>
+                                        <option value="Paid">Paid</option>
+                                        <option value="Partially Paid">Partially Paid</option>
+                                        <option value="Overdue">Overdue</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Record Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

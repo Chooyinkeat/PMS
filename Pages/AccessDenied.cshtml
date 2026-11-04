@@ -1,0 +1,35 @@
+@page
+@model PMS.Pages.AccessDeniedModel
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="nk-block nk-block-middle nk-auth-body text-center">
+    <div class="nk-block-head">
+        <div class="nk-block-head-content">
+            <div class="mb-4">
+                <div class="user-avatar lg bg-danger-dim text-danger" style="width: 80px; height: 80px; margin: 0 auto; font-size: 32px;">
+                    <em class="icon ni ni-shield-alert"></em>
+                </div>
+            </div>
+            <h3 class="nk-block-title text-danger">Access Restricted</h3>
+            <div class="nk-block-des text-soft mt-2">
+                <p class="lead">You do not have the required permission to perform this action.</p>
+                @if (!string.IsNullOrEmpty(Model.ModuleName))
+                {
+                    <div class="alert alert-fill alert-warning alert-icon d-inline-flex mt-3 text-start">
+                        <em class="icon ni ni-alert-circle"></em>
+                        <div>
+                            <strong>Module:</strong> @Model.ModuleName <br />
+                            <strong>Required Action:</strong> @Model.ActionName
+                        </div>
+                    </div>
+                }
+                <p class="text-muted mt-3">If you require access to this module or operation, please contact your system administrator.</p>
+            </div>
+            <div class="mt-4">
+                <a href="~/" class="btn btn-primary"><em class="icon ni ni-arrow-left me-1"></em> Return to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>

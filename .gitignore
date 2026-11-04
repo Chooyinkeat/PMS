@@ -1,0 +1,18 @@
+# Visual Studio
+.vs/
+
+# Build folders
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Development settings
+appsettings.Development.json

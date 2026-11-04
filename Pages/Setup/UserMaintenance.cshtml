@@ -1,0 +1,434 @@
+@page
+@model PMS.Pages.Setup.UserMaintenanceModel
+@{
+    ViewData["Title"] = "User Maintenance";
+}
+
+<!-- Page Header -->
+<div class="nk-block-head nk-block-head-sm">
+    <div class="nk-block-between">
+        <div class="nk-block-head-content">
+            <h3 class="nk-block-title page-title">User Maintenance</h3>
+            <div class="nk-block-des text-soft">
+                <p>Manage system user accounts, login credentials, and user group assignments.</p>
+            </div>
+        </div>
+        <div class="nk-block-head-content">
+            <div class="toggle-wrap nk-block-tools-toggle">
+                <ul class="nk-block-tools g-3">
+                    @if (Model.PagePermission.CanPrint)
+                    {
+                        <li>
+                            <a asp-page="./UserMaintenance" asp-page-handler="ExportPdf"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-statusFilter="@Model.StatusFilter"
+                               asp-route-groupFilter="@Model.GroupFilter"
+                               class="btn btn-outline-secondary">
+                                <em class="icon ni ni-printer"></em><span>Export PDF</span>
+                            </a>
+                        </li>
+                    }
+                    @if (Model.PagePermission.CanAdd)
+                    {
+                        <li>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                                <em class="icon ni ni-plus"></em><span>Add User</span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-fill alert-success alert-dismissible alert-icon">
+        <em class="icon ni ni-check-circle"></em>
+        @TempData["SuccessMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-fill alert-danger alert-dismissible alert-icon">
+        <em class="icon ni ni-cross-circle"></em>
+        @TempData["ErrorMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Filters -->
+<div class="card card-bordered mb-4">
+    <div class="card-inner py-3">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <div class="form-control-wrap">
+                    <div class="form-icon form-icon-left"><em class="icon ni ni-search"></em></div>
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="Search by username or email..." value="@Model.SearchTerm" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="StatusFilter" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active" selected="@(Model.StatusFilter == "active")">Active Only</option>
+                    <option value="inactive" selected="@(Model.StatusFilter == "inactive")">Inactive Only</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">User Group</label>
+                <select name="GroupFilter" class="form-select">
+                    <option value="">All Groups</option>
+                    @foreach (var g in Model.UserGroups)
+                    {
+                        <option value="@g.UserGroupId" selected="@(Model.GroupFilter == g.UserGroupId)">@g.UserGroupName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary flex-grow-1"><em class="icon ni ni-filter"></em> Filter</button>
+                <a asp-page="./UserMaintenance" class="btn btn-icon btn-light" title="Reset Filters"><em class="icon ni ni-reload"></em></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card card-bordered card-preview">
+    <div class="card-inner p-0">
+        <div class="table-responsive">
+            <table class="table table-tranx">
+                <thead>
+                    <tr class="tb-tnx-head bg-light">
+                        <th class="tb-tnx-id"><span class="text-secondary">#</span></th>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>User Group</th>
+                        <th class="text-center">Status</th>
+                        <th>Created Date</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Users.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <em class="icon ni ni-inbox fs-1 mb-2"></em>
+                                <p>No users found matching your search criteria.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var counter = Model.Pagination.StartItemIndex;
+                        @foreach (var u in Model.Users)
+                        {
+                            <tr>
+                                <td class="tb-tnx-id"><span class="text-muted small">@(counter++)</span></td>
+                                <td>
+                                    <div class="user-card">
+                                        <div class="user-avatar sm bg-primary-dim text-primary">
+                                            <span>@(u.UserName.Length >= 2 ? u.UserName.Substring(0, 2).ToUpper() : u.UserName.ToUpper())</span>
+                                        </div>
+                                        <div class="user-name">
+                                            <span class="tb-lead">@u.UserName</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="tb-sub">@u.Email</span></td>
+                                <td>
+                                    <span class="badge badge-dim @(u.UserGroupName.Contains("Admin") ? "bg-primary" : "bg-info")">
+                                        @u.UserGroupName
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if (u.Status)
+                                    {
+                                        <span class="badge badge-dot badge-dot-xs bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-dot badge-dot-xs bg-danger">Inactive</span>
+                                    }
+                                </td>
+                                <td><span class="tb-date">@u.CreatedDate.ToString("yyyy-MM-dd HH:mm")</span></td>
+                                <td class="text-end">
+                                    <div class="dropdown">
+                                        <a href="#" class="dropdown-toggle btn btn-icon btn-trigger" data-bs-toggle="dropdown">
+                                            <em class="icon ni ni-more-h"></em>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-end">
+                                            <ul class="link-list-opt no-bdr">
+                                                @if (Model.PagePermission.CanEdit)
+                                                {
+                                                    <li>
+                                                        <a href="javascript:void(0)" onclick="openEditModal(@u.UserId, '@JavaScriptEncoder.Default.Encode(u.UserName)', '@JavaScriptEncoder.Default.Encode(u.Email)', '@(u.UserGroupId ?? 0)', @(u.Status ? "true" : "false"), '@JavaScriptEncoder.Default.Encode(u.Remark ?? "")')">
+                                                            <em class="icon ni ni-edit"></em><span>Edit User</span>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (Model.PagePermission.CanDelete)
+                                                {
+                                                    <li>
+                                                        <a href="javascript:void(0)" class="text-danger" onclick="openDeleteModal(@u.UserId, '@JavaScriptEncoder.Default.Encode(u.UserName)')">
+                                                            <em class="icon ni ni-trash"></em><span>Delete User</span>
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.Pagination.TotalPages > 1)
+    {
+        <div class="card-inner py-3 border-top">
+            <div class="nk-block-between-md g-3">
+                <div class="g">
+                    <span class="text-muted small">Showing @Model.Pagination.StartItemIndex to @Model.Pagination.EndItemIndex of @Model.Pagination.TotalItems entries</span>
+                </div>
+                <div class="g">
+                    <ul class="pagination justify-content-center justify-content-md-start">
+                        <li class="page-item @(!Model.Pagination.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link" asp-page="./UserMaintenance"
+                               asp-route-currentPage="@(Model.Pagination.CurrentPage - 1)"
+                               asp-route-pageSize="@Model.Pagination.PageSize"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-statusFilter="@Model.StatusFilter"
+                               asp-route-groupFilter="@Model.GroupFilter">Prev</a>
+                        </li>
+                        @for (int p = 1; p <= Model.Pagination.TotalPages; p++)
+                        {
+                            <li class="page-item @(p == Model.Pagination.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-page="./UserMaintenance"
+                                   asp-route-currentPage="@p"
+                                   asp-route-pageSize="@Model.Pagination.PageSize"
+                                   asp-route-searchTerm="@Model.SearchTerm"
+                                   asp-route-statusFilter="@Model.StatusFilter"
+                                   asp-route-groupFilter="@Model.GroupFilter">@p</a>
+                            </li>
+                        }
+                        <li class="page-item @(!Model.Pagination.HasNextPage ? "disabled" : "")">
+                            <a class="page-link" asp-page="./UserMaintenance"
+                               asp-route-currentPage="@(Model.Pagination.CurrentPage + 1)"
+                               asp-route-pageSize="@Model.Pagination.PageSize"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-statusFilter="@Model.StatusFilter"
+                               asp-route-groupFilter="@Model.GroupFilter">Next</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal: Add User -->
+<div class="modal fade" id="addUserModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.UserName">Username <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.UserName" class="form-control" required />
+                                </div>
+                                <span asp-validation-for="Input.UserName" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Email">Email Address <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="email" asp-for="Input.Email" class="form-control" required />
+                                </div>
+                                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Password">Password <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="password" asp-for="Input.Password" class="form-control" required minlength="6" />
+                                </div>
+                                <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.UserGroupId">User Group</label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.UserGroupId" class="form-select">
+                                        <option value="">-- No User Group --</option>
+                                        @foreach (var g in Model.UserGroups)
+                                        {
+                                            <option value="@g.UserGroupId">@g.UserGroupName</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Remark">Remark / Notes</label>
+                                <div class="form-control-wrap">
+                                    <textarea asp-for="Input.Remark" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" asp-for="Input.Status" class="custom-control-input" id="addStatus" checked />
+                                <label class="custom-control-label" for="addStatus">Active Account (Allowed to sign in)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit User -->
+<div class="modal fade" id="editUserModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit User Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Edit">
+                <input type="hidden" asp-for="Input.UserId" id="editUserId" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.UserName">Username <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.UserName" id="editUserName" class="form-control" required />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Email">Email Address <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="email" asp-for="Input.Email" id="editEmail" class="form-control" required />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Password">New Password <span class="text-muted small">(Leave blank to keep unchanged)</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="password" asp-for="Input.Password" class="form-control" placeholder="••••••••" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.UserGroupId">User Group</label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.UserGroupId" id="editUserGroupId" class="form-select">
+                                        <option value="">-- No User Group --</option>
+                                        @foreach (var g in Model.UserGroups)
+                                        {
+                                            <option value="@g.UserGroupId">@g.UserGroupName</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Remark">Remark / Notes</label>
+                                <div class="form-control-wrap">
+                                    <textarea asp-for="Input.Remark" id="editRemark" class="form-control" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" asp-for="Input.Status" class="custom-control-input" id="editStatus" />
+                                <label class="custom-control-label" for="editStatus">Active Account (Allowed to sign in)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Delete Confirmation -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title text-white"><em class="icon ni ni-alert-circle me-1"></em> Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Delete">
+                <input type="hidden" name="id" id="deleteUserId" />
+                <div class="modal-body">
+                    <p>Are you sure you want to delete user account <strong id="deleteUserName" class="text-danger"></strong>?</p>
+                    <p class="text-soft small">If this user is assigned as a member on active projects, the account will be safely deactivated to preserve historical project data.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger">Yes, Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openEditModal(id, username, email, groupId, status, remark) {
+            document.getElementById('editUserId').value = id;
+            document.getElementById('editUserName').value = username;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editUserGroupId').value = groupId > 0 ? groupId : '';
+            document.getElementById('editStatus').checked = status;
+            document.getElementById('editRemark').value = remark;
+            var modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+            modal.show();
+        }
+
+        function openDeleteModal(id, username) {
+            document.getElementById('deleteUserId').value = id;
+            document.getElementById('deleteUserName').innerText = username;
+            var modal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+            modal.show();
+        }
+    </script>
+}

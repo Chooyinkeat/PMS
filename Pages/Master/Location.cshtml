@@ -1,0 +1,441 @@
+@page
+@model PMS.Pages.Master.LocationModel
+@{
+    ViewData["Title"] = "Location Maintenance";
+}
+
+<!-- Page Header -->
+<div class="nk-block-head nk-block-head-sm">
+    <div class="nk-block-between">
+        <div class="nk-block-head-content">
+            <h3 class="nk-block-title page-title">Location Maintenance</h3>
+            <div class="nk-block-des text-soft">
+                <p>Manage project sites, office buildings, customer delivery addresses, and focal locations.</p>
+            </div>
+        </div>
+        <div class="nk-block-head-content">
+            <div class="toggle-wrap nk-block-tools-toggle">
+                <ul class="nk-block-tools g-3">
+                    @if (Model.PagePermission.CanPrint)
+                    {
+                        <li>
+                            <a asp-page="./Location" asp-page-handler="ExportPdf"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-picFilter="@Model.PicFilter"
+                               asp-route-statusFilter="@Model.StatusFilter"
+                               class="btn btn-outline-secondary">
+                                <em class="icon ni ni-printer"></em><span>Export PDF</span>
+                            </a>
+                        </li>
+                    }
+                    @if (Model.PagePermission.CanAdd)
+                    {
+                        <li>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLocModal">
+                                <em class="icon ni ni-plus"></em><span>Add Location</span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-fill alert-success alert-dismissible alert-icon">
+        <em class="icon ni ni-check-circle"></em>
+        @TempData["SuccessMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-fill alert-danger alert-dismissible alert-icon">
+        <em class="icon ni ni-cross-circle"></em>
+        @TempData["ErrorMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Filters -->
+<div class="card card-bordered mb-4">
+    <div class="card-inner py-3">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Search</label>
+                <div class="form-control-wrap">
+                    <div class="form-icon form-icon-left"><em class="icon ni ni-search"></em></div>
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="Search by code, name, or address..." value="@Model.SearchTerm" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Person In Charge</label>
+                <select name="PicFilter" class="form-select">
+                    <option value="">All PIC Contacts</option>
+                    @foreach (var p in Model.Pics)
+                    {
+                        <option value="@p.Picid" selected="@(Model.PicFilter == p.Picid)">@p.Picname (@p.Customer?.CustomerName)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="StatusFilter" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active" selected="@(Model.StatusFilter == "active")">Active Only</option>
+                    <option value="inactive" selected="@(Model.StatusFilter == "inactive")">Inactive Only</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary flex-grow-1"><em class="icon ni ni-filter"></em> Filter</button>
+                <a asp-page="./Location" class="btn btn-icon btn-light" title="Reset Filters"><em class="icon ni ni-reload"></em></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card card-bordered card-preview">
+    <div class="card-inner p-0">
+        <div class="table-responsive">
+            <table class="table table-tranx">
+                <thead>
+                    <tr class="tb-tnx-head bg-light">
+                        <th class="tb-tnx-id"><span class="text-secondary">#</span></th>
+                        <th>Code</th>
+                        <th>Site / Location Name</th>
+                        <th>Full Address</th>
+                        <th>Assigned PIC</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Locations.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <em class="icon ni ni-inbox fs-1 mb-2"></em>
+                                <p>No locations found.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var counter = Model.Pagination.StartItemIndex;
+                        @foreach (var l in Model.Locations)
+                        {
+                            <tr>
+                                <td class="tb-tnx-id"><span class="text-muted small">@(counter++)</span></td>
+                                <td><span class="badge badge-dim bg-outline-primary">@l.LocationCode</span></td>
+                                <td>
+                                    <div class="user-card">
+                                        <div class="user-avatar sm bg-teal-dim text-teal">
+                                            <em class="icon ni ni-map-pin"></em>
+                                        </div>
+                                        <div class="user-name">
+                                            <span class="tb-lead">@l.LocationName</span>
+                                            @if (!string.IsNullOrEmpty(l.Remark))
+                                            {
+                                                <div class="text-soft small">@l.Remark</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="tb-sub">@(string.IsNullOrWhiteSpace(l.FullAddress) ? "No address specified" : l.FullAddress)</span></td>
+                                <td>
+                                    <div>
+                                        <span class="fw-bold">@l.PicName</span>
+                                        @if (l.CustomerName != "None")
+                                        {
+                                            <div class="text-soft small">(@l.CustomerName)</div>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    @if (l.Status)
+                                    {
+                                        <span class="badge badge-dot badge-dot-xs bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-dot badge-dot-xs bg-danger">Inactive</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="dropdown">
+                                        <a href="#" class="dropdown-toggle btn btn-icon btn-trigger" data-bs-toggle="dropdown">
+                                            <em class="icon ni ni-more-h"></em>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-end">
+                                            <ul class="link-list-opt no-bdr">
+                                                @if (Model.PagePermission.CanEdit)
+                                                {
+                                                    <li>
+                                                        <a href="javascript:void(0)" onclick="openEditModal(@l.LocationId, '@JavaScriptEncoder.Default.Encode(l.LocationCode)', '@JavaScriptEncoder.Default.Encode(l.LocationName)', '@JavaScriptEncoder.Default.Encode(l.FullAddress ?? "")', @(l.PicId ?? 0), '@JavaScriptEncoder.Default.Encode(l.Remark ?? "")', @(l.Status ? "true" : "false"))">
+                                                            <em class="icon ni ni-edit"></em><span>Edit Details</span>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (Model.PagePermission.CanDelete)
+                                                {
+                                                    <li>
+                                                        <a href="javascript:void(0)" class="text-danger" onclick="openDeleteModal(@l.LocationId, '@JavaScriptEncoder.Default.Encode(l.LocationName)')">
+                                                            <em class="icon ni ni-trash"></em><span>Delete Location</span>
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.Pagination.TotalPages > 1)
+    {
+        <div class="card-inner py-3 border-top">
+            <div class="nk-block-between-md g-3">
+                <div class="g">
+                    <span class="text-muted small">Showing @Model.Pagination.StartItemIndex to @Model.Pagination.EndItemIndex of @Model.Pagination.TotalItems entries</span>
+                </div>
+                <div class="g">
+                    <ul class="pagination justify-content-center justify-content-md-start">
+                        <li class="page-item @(!Model.Pagination.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link" asp-page="./Location"
+                               asp-route-currentPage="@(Model.Pagination.CurrentPage - 1)"
+                               asp-route-pageSize="@Model.Pagination.PageSize"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-picFilter="@Model.PicFilter"
+                               asp-route-statusFilter="@Model.StatusFilter">Prev</a>
+                        </li>
+                        @for (int p = 1; p <= Model.Pagination.TotalPages; p++)
+                        {
+                            <li class="page-item @(p == Model.Pagination.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-page="./Location"
+                                   asp-route-currentPage="@p"
+                                   asp-route-pageSize="@Model.Pagination.PageSize"
+                                   asp-route-searchTerm="@Model.SearchTerm"
+                                   asp-route-picFilter="@Model.PicFilter"
+                                   asp-route-statusFilter="@Model.StatusFilter">@p</a>
+                            </li>
+                        }
+                        <li class="page-item @(!Model.Pagination.HasNextPage ? "disabled" : "")">
+                            <a class="page-link" asp-page="./Location"
+                               asp-route-currentPage="@(Model.Pagination.CurrentPage + 1)"
+                               asp-route-pageSize="@Model.Pagination.PageSize"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-picFilter="@Model.PicFilter"
+                               asp-route-statusFilter="@Model.StatusFilter">Next</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal: Add Location -->
+<div class="modal fade" id="addLocModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Location / Site</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.LocationCode">Location Code <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.LocationCode" class="form-control" required placeholder="e.g. LOC-KL-01" />
+                                </div>
+                                <span asp-validation-for="Input.LocationCode" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.LocationName">Location Name <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.LocationName" class="form-control" required placeholder="e.g. Bangsar South Headquarters" />
+                                </div>
+                                <span asp-validation-for="Input.LocationName" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PicId">Assigned Contact / PIC</label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.PicId" class="form-select">
+                                        <option value="">-- No PIC Assigned --</option>
+                                        @foreach (var p in Model.Pics)
+                                        {
+                                            <option value="@p.Picid">@p.Picname (@p.Customer?.CustomerName)</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.FullAddress">Full Address</label>
+                                <div class="form-control-wrap">
+                                    <textarea asp-for="Input.FullAddress" class="form-control" rows="2" placeholder="Street, City, Postal Code, State..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Remark">Remark / Site Instructions</label>
+                                <div class="form-control-wrap">
+                                    <textarea asp-for="Input.Remark" class="form-control" rows="2" placeholder="Access code, parking info, etc."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" asp-for="Input.Status" class="custom-control-input" id="addLocStatus" checked />
+                                <label class="custom-control-label" for="addLocStatus">Active Location</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Create Location</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Location -->
+<div class="modal fade" id="editLocModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Edit">
+                <input type="hidden" asp-for="Input.LocationId" id="editLocId" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.LocationCode">Location Code <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.LocationCode" id="editLocCode" class="form-control" required />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.LocationName">Location Name <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.LocationName" id="editLocName" class="form-control" required />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PicId">Assigned Contact / PIC</label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.PicId" id="editLocPicId" class="form-select">
+                                        <option value="">-- No PIC Assigned --</option>
+                                        @foreach (var p in Model.Pics)
+                                        {
+                                            <option value="@p.Picid">@p.Picname (@p.Customer?.CustomerName)</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.FullAddress">Full Address</label>
+                                <div class="form-control-wrap">
+                                    <textarea asp-for="Input.FullAddress" id="editLocAddress" class="form-control" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Remark">Remark / Site Instructions</label>
+                                <div class="form-control-wrap">
+                                    <textarea asp-for="Input.Remark" id="editLocRemark" class="form-control" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" asp-for="Input.Status" class="custom-control-input" id="editLocStatus" />
+                                <label class="custom-control-label" for="editLocStatus">Active Location</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Delete Confirmation -->
+<div class="modal fade" id="deleteLocModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title text-white"><em class="icon ni ni-alert-circle me-1"></em> Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Delete">
+                <input type="hidden" name="id" id="deleteLocIdInput" />
+                <div class="modal-body">
+                    <p>Are you sure you want to delete location <strong id="deleteLocNameTitle" class="text-danger"></strong>?</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger">Yes, Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openEditModal(id, code, name, address, picId, remark, status) {
+            document.getElementById('editLocId').value = id;
+            document.getElementById('editLocCode').value = code;
+            document.getElementById('editLocName').value = name;
+            document.getElementById('editLocAddress').value = address;
+            document.getElementById('editLocPicId').value = picId > 0 ? picId : '';
+            document.getElementById('editLocRemark').value = remark;
+            document.getElementById('editLocStatus').checked = status;
+            var modal = new bootstrap.Modal(document.getElementById('editLocModal'));
+            modal.show();
+        }
+
+        function openDeleteModal(id, name) {
+            document.getElementById('deleteLocIdInput').value = id;
+            document.getElementById('deleteLocNameTitle').innerText = name;
+            var modal = new bootstrap.Modal(document.getElementById('deleteLocModal'));
+            modal.show();
+        }
+    </script>
+}

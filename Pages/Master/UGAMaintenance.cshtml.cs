@@ -1,0 +1,10 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace PMS.Pages.Master
+{
+    public class UGAMaintenanceModel : PageModel
+    {
+        public IActionResult OnGet() => RedirectToPage("/Setup/UserGroupMaintenance");
+    }
+}

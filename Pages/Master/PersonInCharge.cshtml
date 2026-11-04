@@ -1,0 +1,440 @@
+@page
+@model PMS.Pages.Master.PersonInChargeModel
+@{
+    ViewData["Title"] = "Person In Charge";
+}
+
+<!-- Page Header -->
+<div class="nk-block-head nk-block-head-sm">
+    <div class="nk-block-between">
+        <div class="nk-block-head-content">
+            <h3 class="nk-block-title page-title">Person In Charge (PIC)</h3>
+            <div class="nk-block-des text-soft">
+                <p>Manage customer representatives, liaisons, and focal points of contact.</p>
+            </div>
+        </div>
+        <div class="nk-block-head-content">
+            <div class="toggle-wrap nk-block-tools-toggle">
+                <ul class="nk-block-tools g-3">
+                    @if (Model.PagePermission.CanPrint)
+                    {
+                        <li>
+                            <a asp-page="./PersonInCharge" asp-page-handler="ExportPdf"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-customerFilter="@Model.CustomerFilter"
+                               asp-route-statusFilter="@Model.StatusFilter"
+                               class="btn btn-outline-secondary">
+                                <em class="icon ni ni-printer"></em><span>Export PDF</span>
+                            </a>
+                        </li>
+                    }
+                    @if (Model.PagePermission.CanAdd)
+                    {
+                        <li>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPicModal">
+                                <em class="icon ni ni-plus"></em><span>Add Person In Charge</span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-fill alert-success alert-dismissible alert-icon">
+        <em class="icon ni ni-check-circle"></em>
+        @TempData["SuccessMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-fill alert-danger alert-dismissible alert-icon">
+        <em class="icon ni ni-cross-circle"></em>
+        @TempData["ErrorMessage"]
+        <button class="close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Filters -->
+<div class="card card-bordered mb-4">
+    <div class="card-inner py-3">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Search</label>
+                <div class="form-control-wrap">
+                    <div class="form-icon form-icon-left"><em class="icon ni ni-search"></em></div>
+                    <input type="text" name="SearchTerm" class="form-control" placeholder="Search by name, code or role..." value="@Model.SearchTerm" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Customer</label>
+                <select name="CustomerFilter" class="form-select">
+                    <option value="">All Customers</option>
+                    @foreach (var c in Model.Customers)
+                    {
+                        <option value="@c.CustomerId" selected="@(Model.CustomerFilter == c.CustomerId)">@c.CustomerName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="StatusFilter" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active" selected="@(Model.StatusFilter == "active")">Active Only</option>
+                    <option value="inactive" selected="@(Model.StatusFilter == "inactive")">Inactive Only</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary flex-grow-1"><em class="icon ni ni-filter"></em> Filter</button>
+                <a asp-page="./PersonInCharge" class="btn btn-icon btn-light" title="Reset Filters"><em class="icon ni ni-reload"></em></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card card-bordered card-preview">
+    <div class="card-inner p-0">
+        <div class="table-responsive">
+            <table class="table table-tranx">
+                <thead>
+                    <tr class="tb-tnx-head bg-light">
+                        <th class="tb-tnx-id"><span class="text-secondary">#</span></th>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Designation / Role</th>
+                        <th>Customer</th>
+                        <th class="text-center">Locations</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Pics.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <em class="icon ni ni-inbox fs-1 mb-2"></em>
+                                <p>No Person In Charge found.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var counter = Model.Pagination.StartItemIndex;
+                        @foreach (var p in Model.Pics)
+                        {
+                            <tr>
+                                <td class="tb-tnx-id"><span class="text-muted small">@(counter++)</span></td>
+                                <td><span class="badge badge-dim bg-outline-primary">@p.PicCode</span></td>
+                                <td>
+                                    <div class="user-card">
+                                        <div class="user-avatar sm bg-azure-dim text-azure">
+                                            <span>@(p.PicName.Length >= 2 ? p.PicName.Substring(0, 2).ToUpper() : p.PicName.ToUpper())</span>
+                                        </div>
+                                        <div class="user-name">
+                                            <span class="tb-lead">@p.PicName</span>
+                                            @if (!string.IsNullOrEmpty(p.Remark))
+                                            {
+                                                <div class="text-soft small">@p.Remark</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="tb-sub">@(string.IsNullOrWhiteSpace(p.PicRole) ? "Representative" : p.PicRole)</span></td>
+                                <td><span class="fw-bold">@p.CustomerName</span></td>
+                                <td class="text-center">
+                                    <span class="badge badge-dim @(p.LocationCount > 0 ? "bg-info" : "bg-light text-muted")">
+                                        @p.LocationCount
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if (p.Status)
+                                    {
+                                        <span class="badge badge-dot badge-dot-xs bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-dot badge-dot-xs bg-danger">Inactive</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="dropdown">
+                                        <a href="#" class="dropdown-toggle btn btn-icon btn-trigger" data-bs-toggle="dropdown">
+                                            <em class="icon ni ni-more-h"></em>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-end">
+                                            <ul class="link-list-opt no-bdr">
+                                                @if (Model.PagePermission.CanEdit)
+                                                {
+                                                    <li>
+                                                        <a href="javascript:void(0)" onclick="openEditModal(@p.PicId, '@JavaScriptEncoder.Default.Encode(p.PicCode)', '@JavaScriptEncoder.Default.Encode(p.PicName)', '@JavaScriptEncoder.Default.Encode(p.PicRole ?? "")', @p.CustomerId, '@JavaScriptEncoder.Default.Encode(p.Remark ?? "")', @(p.Status ? "true" : "false"))">
+                                                            <em class="icon ni ni-edit"></em><span>Edit Details</span>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (Model.PagePermission.CanDelete)
+                                                {
+                                                    <li>
+                                                        <a href="javascript:void(0)" class="text-danger" onclick="openDeleteModal(@p.PicId, '@JavaScriptEncoder.Default.Encode(p.PicName)')">
+                                                            <em class="icon ni ni-trash"></em><span>Delete PIC</span>
+                                                        </a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.Pagination.TotalPages > 1)
+    {
+        <div class="card-inner py-3 border-top">
+            <div class="nk-block-between-md g-3">
+                <div class="g">
+                    <span class="text-muted small">Showing @Model.Pagination.StartItemIndex to @Model.Pagination.EndItemIndex of @Model.Pagination.TotalItems entries</span>
+                </div>
+                <div class="g">
+                    <ul class="pagination justify-content-center justify-content-md-start">
+                        <li class="page-item @(!Model.Pagination.HasPreviousPage ? "disabled" : "")">
+                            <a class="page-link" asp-page="./PersonInCharge"
+                               asp-route-currentPage="@(Model.Pagination.CurrentPage - 1)"
+                               asp-route-pageSize="@Model.Pagination.PageSize"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-customerFilter="@Model.CustomerFilter"
+                               asp-route-statusFilter="@Model.StatusFilter">Prev</a>
+                        </li>
+                        @for (int p = 1; p <= Model.Pagination.TotalPages; p++)
+                        {
+                            <li class="page-item @(p == Model.Pagination.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-page="./PersonInCharge"
+                                   asp-route-currentPage="@p"
+                                   asp-route-pageSize="@Model.Pagination.PageSize"
+                                   asp-route-searchTerm="@Model.SearchTerm"
+                                   asp-route-customerFilter="@Model.CustomerFilter"
+                                   asp-route-statusFilter="@Model.StatusFilter">@p</a>
+                            </li>
+                        }
+                        <li class="page-item @(!Model.Pagination.HasNextPage ? "disabled" : "")">
+                            <a class="page-link" asp-page="./PersonInCharge"
+                               asp-route-currentPage="@(Model.Pagination.CurrentPage + 1)"
+                               asp-route-pageSize="@Model.Pagination.PageSize"
+                               asp-route-searchTerm="@Model.SearchTerm"
+                               asp-route-customerFilter="@Model.CustomerFilter"
+                               asp-route-statusFilter="@Model.StatusFilter">Next</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal: Add PIC -->
+<div class="modal fade" id="addPicModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Person In Charge</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PicCode">PIC Code <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.PicCode" class="form-control" required placeholder="e.g. PIC-001" />
+                                </div>
+                                <span asp-validation-for="Input.PicCode" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PicName">Full Name <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.PicName" class="form-control" required placeholder="e.g. Johnathan Lee" />
+                                </div>
+                                <span asp-validation-for="Input.PicName" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PicRole">Designation / Role</label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.PicRole" class="form-control" placeholder="e.g. Project Director / IT Manager" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.CustomerId">Representing Customer <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.CustomerId" class="form-select" required>
+                                        <option value="">-- Select Customer --</option>
+                                        @foreach (var c in Model.Customers)
+                                        {
+                                            <option value="@c.CustomerId">@c.CustomerName (@c.CustomerCode)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <span asp-validation-for="Input.CustomerId" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Remark">Remark / Contact Details</label>
+                                <div class="form-control-wrap">
+                                    <textarea asp-for="Input.Remark" class="form-control" rows="2" placeholder="Phone, email, or working hours notes..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" asp-for="Input.Status" class="custom-control-input" id="addPicStatus" checked />
+                                <label class="custom-control-label" for="addPicStatus">Active Contact Person</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Create PIC</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit PIC -->
+<div class="modal fade" id="editPicModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Person In Charge</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Edit">
+                <input type="hidden" asp-for="Input.PicId" id="editPicId" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PicCode">PIC Code <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.PicCode" id="editPicCode" class="form-control" required />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PicName">Full Name <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.PicName" id="editPicName" class="form-control" required />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.PicRole">Designation / Role</label>
+                                <div class="form-control-wrap">
+                                    <input type="text" asp-for="Input.PicRole" id="editPicRole" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.CustomerId">Representing Customer <span class="text-danger">*</span></label>
+                                <div class="form-control-wrap">
+                                    <select asp-for="Input.CustomerId" id="editPicCustomerId" class="form-select" required>
+                                        @foreach (var c in Model.Customers)
+                                        {
+                                            <option value="@c.CustomerId">@c.CustomerName (@c.CustomerCode)</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label" asp-for="Input.Remark">Remark / Contact Details</label>
+                                <div class="form-control-wrap">
+                                    <textarea asp-for="Input.Remark" id="editPicRemark" class="form-control" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" asp-for="Input.Status" class="custom-control-input" id="editPicStatus" />
+                                <label class="custom-control-label" for="editPicStatus">Active Contact Person</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Delete Confirmation -->
+<div class="modal fade" id="deletePicModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title text-white"><em class="icon ni ni-alert-circle me-1"></em> Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Delete">
+                <input type="hidden" name="id" id="deletePicIdInput" />
+                <div class="modal-body">
+                    <p>Are you sure you want to delete Person In Charge <strong id="deletePicNameTitle" class="text-danger"></strong>?</p>
+                    <p class="text-soft small">Contacts that are currently assigned to physical locations cannot be deleted.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger">Yes, Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openEditModal(id, code, name, role, customerId, remark, status) {
+            document.getElementById('editPicId').value = id;
+            document.getElementById('editPicCode').value = code;
+            document.getElementById('editPicName').value = name;
+            document.getElementById('editPicRole').value = role;
+            document.getElementById('editPicCustomerId').value = customerId;
+            document.getElementById('editPicRemark').value = remark;
+            document.getElementById('editPicStatus').checked = status;
+            var modal = new bootstrap.Modal(document.getElementById('editPicModal'));
+            modal.show();
+        }
+
+        function openDeleteModal(id, name) {
+            document.getElementById('deletePicIdInput').value = id;
+            document.getElementById('deletePicNameTitle').innerText = name;
+            var modal = new bootstrap.Modal(document.getElementById('deletePicModal'));
+            modal.show();
+        }
+    </script>
+}
