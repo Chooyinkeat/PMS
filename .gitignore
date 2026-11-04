@@ -9,6 +9,9 @@ obj/
 *.user
 *.suo
 
+# NuGet
+packages/
+
 # Environment files
 .env
 .env.*
