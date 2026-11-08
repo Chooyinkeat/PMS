@@ -20,6 +20,36 @@ namespace PMS.Pages.Setup
         public List<Customer> Customers { get; set; } = new();
         public List<Models.Project> Projects { get; set; } = new();
 
+        public class ProjectReportRow
+        {
+            public string ProjectCode { get; set; } = "";
+            public string ProjectName { get; set; } = "";
+            public string Customer { get; set; } = "";
+            public string Price { get; set; } = "";
+            public string Status { get; set; } = "";
+            public string DueDate { get; set; } = "";
+        }
+
+        public class PaymentReportRow
+        {
+            public string Ref { get; set; } = "";
+            public string Project { get; set; } = "";
+            public string Customer { get; set; } = "";
+            public string Amount { get; set; } = "";
+            public string Method { get; set; } = "";
+            public string DueDate { get; set; } = "";
+            public string Status { get; set; } = "";
+        }
+
+        public class CustomerReportRow
+        {
+            public string CustomerCode { get; set; } = "";
+            public string CustomerName { get; set; } = "";
+            public int Projects { get; set; }
+            public int Pics { get; set; }
+            public string Status { get; set; } = "";
+        }
+
         public async Task<IActionResult> OnGetAsync()
         {
             if (!await CheckPermissionAsync(AppModules.Document, PermissionAction.View))
@@ -49,19 +79,18 @@ namespace PMS.Pages.Setup
 
             var list = await query
                 .OrderBy(p => p.ProjectName)
-                .Select(p => new
+                .Select(p => new ProjectReportRow
                 {
-                    p.ProjectCode,
-                    p.ProjectName,
-                    Customer = p.Customer.CustomerName,
+                    ProjectCode = p.ProjectCode,
+                    ProjectName = p.ProjectName,
+                    Customer = p.Customer != null ? p.Customer.CustomerName : "Unknown",
                     Price = p.Price.ToString("C2"),
                     Status = p.Status,
-                    StartDate = p.StartDate.HasValue ? p.StartDate.Value.ToString("yyyy-MM-dd") : "-",
                     DueDate = p.DueDate.HasValue ? p.DueDate.Value.ToString("yyyy-MM-dd") : "-"
                 })
                 .ToListAsync();
 
-            var columns = new List<PdfColumn<dynamic>>
+            var columns = new List<PdfColumn<ProjectReportRow>>
             {
                 new() { Header = "Project Code", ValueSelector = p => p.ProjectCode, Width = 80f },
                 new() { Header = "Project Title", ValueSelector = p => p.ProjectName, Width = 150f },
@@ -109,11 +138,11 @@ namespace PMS.Pages.Setup
 
             var list = await query
                 .OrderByDescending(p => p.CreatedDate)
-                .Select(p => new
+                .Select(p => new PaymentReportRow
                 {
                     Ref = p.PaymentReference ?? "N/A",
-                    Project = p.Project.ProjectCode,
-                    Customer = p.Project.Customer.CustomerName,
+                    Project = p.Project != null ? p.Project.ProjectCode : "N/A",
+                    Customer = p.Project != null && p.Project.Customer != null ? p.Project.Customer.CustomerName : "N/A",
                     Amount = p.Amount.ToString("C2"),
                     Status = p.PaymentStatus,
                     Method = p.PaymentMethod ?? "Transfer",
@@ -121,7 +150,7 @@ namespace PMS.Pages.Setup
                 })
                 .ToListAsync();
 
-            var columns = new List<PdfColumn<dynamic>>
+            var columns = new List<PdfColumn<PaymentReportRow>>
             {
                 new() { Header = "Invoice Ref #", ValueSelector = p => p.Ref, Width = 95f },
                 new() { Header = "Project", ValueSelector = p => p.Project, Width = 75f },
@@ -159,17 +188,17 @@ namespace PMS.Pages.Setup
             var list = await Context.Customers
                 .AsNoTracking()
                 .OrderBy(c => c.CustomerName)
-                .Select(c => new
+                .Select(c => new CustomerReportRow
                 {
-                    c.CustomerCode,
-                    c.CustomerName,
+                    CustomerCode = c.CustomerCode,
+                    CustomerName = c.CustomerName,
                     Projects = Context.Projects.Count(p => p.CustomerId == c.CustomerId),
                     Pics = Context.Personincharges.Count(p => p.CustomerId == c.CustomerId),
                     Status = c.Status == true ? "Active" : "Inactive"
                 })
                 .ToListAsync();
 
-            var columns = new List<PdfColumn<dynamic>>
+            var columns = new List<PdfColumn<CustomerReportRow>>
             {
                 new() { Header = "Customer Code", ValueSelector = c => c.CustomerCode, Width = 90f },
                 new() { Header = "Customer / Client Name", ValueSelector = c => c.CustomerName, Width = 180f },
@@ -182,7 +211,7 @@ namespace PMS.Pages.Setup
             {
                 { "Total Customers", list.Count.ToString() },
                 { "Active Clients", list.Count(c => c.Status == "Active").ToString() },
-                { "Total Projects", list.Sum(c => (int)c.Projects).ToString() }
+                { "Total Projects", list.Sum(c => c.Projects).ToString() }
             };
 
             var pdf = _pdfService.GenerateListPdf(

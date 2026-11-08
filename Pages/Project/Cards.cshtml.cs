@@ -23,12 +23,16 @@ namespace PMS.Pages.Project
         [BindProperty(SupportsGet = true)]
         public int? CustomerFilter { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public string? StatusFilter { get; set; }
+
         public class ProjectCardViewModel
         {
             public int ProjectId { get; set; }
             public string ProjectCode { get; set; } = string.Empty;
             public string ProjectName { get; set; } = string.Empty;
             public string CustomerName { get; set; } = string.Empty;
+            public string? Description { get; set; }
             public decimal Price { get; set; }
             public decimal TotalPaid { get; set; }
             public int PaymentPercent => Price > 0 ? (int)Math.Min(100, Math.Round((TotalPaid / Price) * 100)) : 0;
@@ -36,6 +40,7 @@ namespace PMS.Pages.Project
             public DateOnly? DueDate { get; set; }
             public string Status { get; set; } = "Pending";
             public List<string> MemberInitials { get; set; } = new();
+            public int TotalMembers { get; set; }
             public bool IsOverdue => DueDate.HasValue && DueDate.Value < DateOnly.FromDateTime(DateTime.Today) && Status != "Completed" && Status != "Cancelled";
         }
 
@@ -69,6 +74,9 @@ namespace PMS.Pages.Project
             if (CustomerFilter.HasValue && CustomerFilter > 0)
                 query = query.Where(p => p.CustomerId == CustomerFilter.Value);
 
+            if (!string.IsNullOrWhiteSpace(StatusFilter))
+                query = query.Where(p => p.Status == StatusFilter);
+
             var projectEntities = await query
                 .OrderByDescending(p => p.CreatedDate)
                 .ToListAsync();
@@ -76,11 +84,12 @@ namespace PMS.Pages.Project
             Projects = projectEntities.Select(p =>
             {
                 var paid = p.Payments.Where(pm => pm.PaymentStatus == "Paid").Sum(pm => pm.Amount);
-                var initials = p.Projectmembers
-                    .Select(pm => pm.User.UserName)
-                    .Where(n => !string.IsNullOrEmpty(n))
+                var validMembers = p.Projectmembers
+                    .Where(pm => pm.User != null && !string.IsNullOrEmpty(pm.User.UserName))
+                    .ToList();
+                var initials = validMembers
                     .Take(4)
-                    .Select(n => n.Length >= 2 ? n.Substring(0, 2).ToUpper() : n.ToUpper())
+                    .Select(pm => pm.User!.UserName.Length >= 2 ? pm.User!.UserName.Substring(0, 2).ToUpper() : pm.User!.UserName.ToUpper())
                     .ToList();
 
                 return new ProjectCardViewModel
@@ -89,12 +98,14 @@ namespace PMS.Pages.Project
                     ProjectCode = p.ProjectCode,
                     ProjectName = p.ProjectName,
                     CustomerName = p.Customer?.CustomerName ?? "Unknown",
+                    Description = p.Description,
                     Price = p.Price,
                     TotalPaid = paid,
                     StartDate = p.StartDate,
                     DueDate = p.DueDate,
                     Status = p.Status,
-                    MemberInitials = initials
+                    MemberInitials = initials,
+                    TotalMembers = validMembers.Count
                 };
             }).ToList();
 

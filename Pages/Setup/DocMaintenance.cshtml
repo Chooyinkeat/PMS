@@ -34,6 +34,7 @@
                     Exports a complete audit of all registered projects, including contract values, client profiles, start and target completion dates, and project statuses.
                 </p>
                 <form method="get" asp-page-handler="ExportProjectsReport" target="_blank" class="mt-3">
+                    <input type="hidden" name="handler" value="ExportProjectsReport" />
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label small">Status Filter</label>
@@ -81,6 +82,7 @@
                     Exports comprehensive ledger of project billings, milestone invoices, payment methods, due dates, paid dates, and collected cash totals.
                 </p>
                 <form method="get" asp-page-handler="ExportPaymentsReport" target="_blank" class="mt-3">
+                    <input type="hidden" name="handler" value="ExportPaymentsReport" />
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label small">Status Filter</label>

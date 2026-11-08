@@ -18,25 +18,52 @@
 <div class="nk-block-head nk-block-head-sm">
     <div class="nk-block-between">
         <div class="nk-block-head-content">
-            <div class="nk-block-des text-soft mb-1">
-                <a asp-page="./List" class="back-to"><em class="icon ni ni-arrow-left"></em> Back to Project Register</a>
+
+            <!-- Back link -->
+            <div class="text-soft mb-3">
+                <a asp-page="./List" class="back-to">
+                    <em class="icon ni ni-arrow-left"></em>
+                    Back to Project Register
+                </a>
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <h3 class="nk-block-title page-title">@Model.Project.ProjectName</h3>
-                <span class="badge badge-dim @statusBadgeClass fs-6">@Model.Project.Status</span>
-                <span class="badge badge-dim bg-outline-primary fs-6">@Model.Project.ProjectCode</span>
+
+            <!-- Project name and badges -->
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <h3 class="nk-block-title page-title mb-0">
+                    @Model.Project.ProjectName
+                </h3>
+
+                <span class="badge badge-dim @statusBadgeClass fs-6">
+                    @Model.Project.Status
+                </span>
+
+                <span class="badge badge-dim bg-outline-primary fs-6">
+                    @Model.Project.ProjectCode
+                </span>
             </div>
-            <div class="nk-block-des text-soft">
-                <span>Client: <strong>@Model.Project.CustomerName</strong> (@Model.Project.CustomerCode)</span>
+
+            <!-- Client information -->
+            <div class="text-soft">
+                <span>
+                    Client:
+                    <strong>@Model.Project.CustomerName</strong>
+                    (@Model.Project.CustomerCode)
+                </span>
             </div>
+
         </div>
+
         <div class="nk-block-head-content">
             <ul class="nk-block-tools g-3">
                 @if (Model.PagePermission.CanPrint)
                 {
                     <li>
-                        <a asp-page="./Detail" asp-page-handler="ExportDossierPdf" asp-route-id="@Model.Project.ProjectId" class="btn btn-outline-primary">
-                            <em class="icon ni ni-file-pdf"></em><span>Export Project Dossier (PDF)</span>
+                        <a asp-page="./Detail"
+                           asp-page-handler="ExportDossierPdf"
+                           asp-route-id="@Model.Project.ProjectId"
+                           class="btn btn-outline-primary">
+                            <em class="icon ni ni-file-pdf"></em>
+                            <span>Export Project Dossier (PDF)</span>
                         </a>
                     </li>
                 }

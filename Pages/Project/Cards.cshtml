@@ -29,7 +29,7 @@
 <div class="card card-bordered mb-4">
     <div class="card-inner py-3">
         <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-7">
+            <div class="col-md-5">
                 <label class="form-label">Search</label>
                 <div class="form-control-wrap">
                     <div class="form-icon form-icon-left"><em class="icon ni ni-search"></em></div>
@@ -44,6 +44,17 @@
                     {
                         <option value="@c.CustomerId" selected="@(Model.CustomerFilter == c.CustomerId)">@c.CustomerName</option>
                     }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="StatusFilter" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="Pending" selected="@(Model.StatusFilter == "Pending")">Pending</option>
+                    <option value="In Progress" selected="@(Model.StatusFilter == "In Progress")">In Progress</option>
+                    <option value="Completed" selected="@(Model.StatusFilter == "Completed")">Completed</option>
+                    <option value="On Hold" selected="@(Model.StatusFilter == "On Hold")">On Hold</option>
+                    <option value="Cancelled" selected="@(Model.StatusFilter == "Cancelled")">Cancelled</option>
                 </select>
             </div>
             <div class="col-md-2 d-flex gap-2">
@@ -82,11 +93,11 @@ else
             };
 
             <div class="col-sm-6 col-lg-4">
-                <div class="card card-bordered h-100">
-                    <div class="card-inner">
-                        <div class="project-head mb-2">
+                <div class="card card-bordered card-stretch h-100">
+                    <div class="card-inner d-flex flex-column h-100">
+                        <div class="pms-project-head mb-2">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="badge badge-dim bg-outline-primary fw-bold">@p.ProjectCode</span>
+                                <span class="badge badge-outline-primary fw-bold">@p.ProjectCode</span>
                                 <span class="badge badge-dim @badgeClass">@p.Status</span>
                             </div>
                             <h5 class="title mt-2">
@@ -95,6 +106,12 @@ else
                             <div class="sub-text text-soft">
                                 <em class="icon ni ni-building me-1"></em>@p.CustomerName
                             </div>
+                            @if (!string.IsNullOrWhiteSpace(p.Description))
+                            {
+                                <p class="text-soft small mt-2 mb-0" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                    @p.Description
+                                </p>
+                            }
                         </div>
 
                         <!-- Price & Payment Collection -->
@@ -105,11 +122,11 @@ else
                             </div>
                             <div class="progress progress-sm">
                                 <div class="progress-bar @(p.PaymentPercent >= 100 ? "bg-success" : "bg-primary")"
-                                     style="width: @p.PaymentPercent%;"></div>
+                                     style="width: @(p.PaymentPercent)%;"></div>
                             </div>
                             <div class="d-flex justify-content-between text-soft small mt-1">
-                                <span>@p.PaymentPercent% Paid</span>
-                                <span>Balance: @((p.Price - p.TotalPaid).ToString("C0"))</span>
+                                <span>@(p.PaymentPercent)% Paid</span>
+                                <span>Balance: @(Math.Max(0, p.Price - p.TotalPaid).ToString("C0"))</span>
                             </div>
                         </div>
 
@@ -128,13 +145,19 @@ else
                                             <span>@init</span>
                                         </div>
                                     }
+                                    @if (p.TotalMembers > 4)
+                                    {
+                                        <div class="user-avatar xs bg-light text-soft" title="@(p.TotalMembers - 4) more members">
+                                            <span>+@(p.TotalMembers - 4)</span>
+                                        </div>
+                                    }
                                 }
                             </div>
                             <div>
                                 @if (p.IsOverdue)
                                 {
                                     <span class="badge badge-dim bg-danger" title="Overdue Target Date">
-                                        <em class="icon ni ni-clock me-1"></em>@(p.DueDate?.ToString("dd MMM") ?? "")
+                                        <em class="icon ni ni-clock me-1"></em>@(p.DueDate?.ToString("dd MMM yyyy") ?? "")
                                     </span>
                                 }
                                 else
@@ -146,7 +169,7 @@ else
                             </div>
                         </div>
 
-                        <div class="mt-3 text-end">
+                        <div class="mt-auto pt-3 text-end">
                             <a asp-page="./Detail" asp-route-id="@p.ProjectId" class="btn btn-sm btn-outline-primary w-100">
                                 <span>Manage Project & Team</span> <em class="icon ni ni-arrow-right ms-1"></em>
                             </a>
