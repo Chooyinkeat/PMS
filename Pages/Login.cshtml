@@ -3,6 +3,17 @@
 @{
     Layout = null;
 }
+
+<style>
+    .pms-slide-img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+    }
+</style>
+
 <!DOCTYPE html>
 <html lang="en" class="js">
 
@@ -32,8 +43,8 @@
                             <div class="nk-block nk-block-middle nk-auth-body">
                                 <div class="brand-logo pb-5">
                                     <a asp-page="/Index" class="logo-link">
-                                        <img class="logo-light logo-img logo-img-lg" src="~/images/logo.png" srcset="~/images/logo2x.png 2x" alt="PMS">
-                                        <img class="logo-dark logo-img logo-img-lg" src="~/images/logo-dark.png" srcset="~/images/logo-dark2x.png 2x" alt="PMS">
+                                        <img class="logo-light logo-img logo-img-lg" src="~/images/pms.png" srcset="~/images/pms.png 2x" alt="PMS">
+                                        <img class="logo-dark logo-img logo-img-lg" src="~/images/pms.png" srcset="~/images/pms.png 2x" alt="PMS">
                                     </a>
                                 </div>
 
@@ -74,17 +85,14 @@
                                                    placeholder="Enter your password">
                                         </div>
                                     </div>
-
                                     <div class="form-group">
                                         <button type="submit" class="btn btn-lg btn-primary btn-block">Sign in</button>
                                     </div>
                                 </form>
-
                                 <div class="form-note-s2 pt-4">
                                     Need access? Contact your system administrator.
                                 </div>
                             </div>
-
                             <div class="nk-block nk-auth-footer">
                                 <div class="mt-3">
                                     <p>&copy; @DateTime.Now.Year PMS - Project Management System. All Rights Reserved.</p>
@@ -100,7 +108,9 @@
                                     <div class="slider-item">
                                         <div class="nk-feature nk-feature-center">
                                             <div class="nk-feature-img">
-                                                <img class="round" src="~/images/slides/promo-a.png" srcset="~/images/slides/promo-a2x.png 2x" alt="">
+                                                <img class="round pms-slide-img"
+                                                     src="~/images/pms_slide_1.jpg"
+                                                     alt="Manage Projects">
                                             </div>
                                             <div class="nk-feature-content py-4 p-sm-5">
                                                 <h4>Manage Projects</h4>
@@ -108,10 +118,13 @@
                                             </div>
                                         </div>
                                     </div>
+
                                     <div class="slider-item">
                                         <div class="nk-feature nk-feature-center">
                                             <div class="nk-feature-img">
-                                                <img class="round" src="~/images/slides/promo-b.png" srcset="~/images/slides/promo-b2x.png 2x" alt="">
+                                                <img class="round pms-slide-img"
+                                                     src="~/images/pms_slide_4.jpg"
+                                                     alt="Assign and Track Tasks">
                                             </div>
                                             <div class="nk-feature-content py-4 p-sm-5">
                                                 <h4>Assign &amp; Track Tasks</h4>
@@ -119,10 +132,13 @@
                                             </div>
                                         </div>
                                     </div>
+
                                     <div class="slider-item">
                                         <div class="nk-feature nk-feature-center">
                                             <div class="nk-feature-img">
-                                                <img class="round" src="~/images/slides/promo-c.png" srcset="~/images/slides/promo-c2x.png 2x" alt="">
+                                                <img class="round pms-slide-img"
+                                                     src="~/images/pms_slide_3.jpeg"
+                                                     alt="Monitor Progress">
                                             </div>
                                             <div class="nk-feature-content py-4 p-sm-5">
                                                 <h4>Monitor Progress</h4>
